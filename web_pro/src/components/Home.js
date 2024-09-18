@@ -1,20 +1,24 @@
-import React from 'react'
-import Nav from './Nav'
+import React from 'react';
+import './homestyle.css'; 
 
 const Home = () => {
   return (
-    <>
-      <div style={{ width: '100vw', height: '100vh', display: 'flex', background: '#FF9F66', flexDirection: 'row' }}>
-        <div style={{ width: '17vw', height: '100vh',  display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FFFFFF' }}>
-          Cluebox
-        </div>
-        <div style={{ width: '70vw', height: '100vh', display: 'flex', flexDirection: 'column', background: '#FF9F66', alignItems: 'center', justifyContent: 'center' }}>
-          hello
-          <Nav />
-        </div>
+    <div className="banner">
+      <div className="navbar">
+        <img src="/se.png" className="logo" alt="Logo" />
+        <ul>
+          <li><a href="#">Home</a></li>
+          <li><a href="#">Course</a></li>
+          <li><a href="#">Schedule</a></li>
+          <li><a href="#">Video</a></li>
+          <li><a href="#">Book</a></li>
+        </ul>
       </div>
-    </>
-  )
+      <div className="content">
+        asdadad
+      </div>
+    </div>
+  );
 }
 
-export default Home
+export default Home;
