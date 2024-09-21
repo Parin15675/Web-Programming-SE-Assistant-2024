@@ -1,7 +1,7 @@
 import React from 'react'
 import Nav from './Nav'
 
-const Book = () => {
+const Coe = () => {
   return (
     <>
       <div style={{ width: '100vw', height: '100vh', display: 'flex', background: '#FF9F66', flexDirection: 'row' }}>
@@ -42,4 +42,4 @@ const Book = () => {
   )
 }
 
-export default Book
+export default Coe
