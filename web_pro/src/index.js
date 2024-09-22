@@ -10,7 +10,7 @@ import Home from './components/Home';
 import Schedule from './components/Schedule';
 import Video from './components/Video';
 import Book from './components/Book';
-import Coe from './components/Coe';
+import Course from './components/Course';
 
 const router = createBrowserRouter([
   {
@@ -30,8 +30,8 @@ const router = createBrowserRouter([
     element: <Book />
   },
   {
-    path: "coe",
-    element: <Coe />
+    path: "course",
+    element: <Course />
   },
 ]);
 

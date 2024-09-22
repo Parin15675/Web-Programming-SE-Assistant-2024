@@ -1,22 +1,29 @@
-import { Link } from 'react-router-dom'
-
 import React from 'react';
+import './homestyle.css'; 
+import Login from './Login';
+import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 
 const Nav = () => {
 
-    return (
-        <div style={{ width: 255, height: 936, left: 30, top: 45, position: 'absolute', background: '#002379', borderRadius: 16, textAlign: 'center' }} >
-            <Link to='/' style={{ width: 255, height: 57, textAlign: 'center', color: 'white', fontSize: 40, fontFamily: 'Koulen', fontWeight: '400', wordWrap: 'break-word' }}>adddfdfsdfddHOME</Link>
-            <br />
-            <Link to='/coe' style={{ width: 255, height: 57, left: 107, top: 381, textAlign: 'center', color: 'white', fontSize: 40, fontFamily: 'Koulen', fontWeight: '400', wordWrap: 'break-word' }}>COURSE</Link>
-            <br />
-            <Link to='/schedule' style={{ width: 255, height: 61, left: 68, top: 451, textAlign: 'center', color: 'white', fontSize: 40, fontFamily: 'Koulen', fontWeight: '400', wordWrap: 'break-word' }}>SCHEDULE</Link>
-            <br />
-            <Link to='/video' style={{ width: 255, height: 61, left: 107, top: 525, textAlign: 'center', color: 'white', fontSize: 40, fontFamily: 'Koulen', fontWeight: '400', wordWrap: 'break-word' }}>VIDEO</Link>
-            <br />
-            <Link to='/book' style={{ width: 255, height: 55, left: 124, top: 599, textAlign: 'center', color: 'white', fontSize: 40, fontFamily: 'Koulen', fontWeight: '400', wordWrap: 'break-word' }}>BOOK</Link>
-        </div>
-    )
+  const profile = useSelector(state => state.profile);  // Get the profile from Redux store
+
+  return (
+    <div className="banner">
+      <div className="navbar">
+        <img src="/se.png" className="logo" alt="Logo" />
+        <ul>
+          <li><Link to="/">Home</Link></li>
+          <li><Link to="/course">Course</Link></li>
+          <li><Link to="/schedule">Schedule</Link></li>
+          <li><Link to="/video">video</Link></li>
+          <li><Link to="/book">Book</Link></li>
+          <li>{profile ? <p>{profile.name} <img src={profile.imageUrl} alt="user image" onError={(e) => e.target.src = 'default-image-path.jpg'} /></p> : <p>You are not logged in.</p>}</li>
+          
+        </ul>
+      </div>
+    </div>
+  );
 }
 
-export default Nav
+export default Nav;
