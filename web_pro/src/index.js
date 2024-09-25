@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { Provider } from 'react-redux';
 import store from './components/store'; // Import the store
@@ -10,7 +9,9 @@ import Home from './components/Home';
 import Schedule from './components/Schedule';
 import Video from './components/Video';
 import Book from './components/Book';
-import Course from './components/Course';
+import Course_2 from './components/Course/Course_2';
+import Login from './components/Login/Login';
+import Profile from './components/Login/Profile';
 
 const router = createBrowserRouter([
   {
@@ -31,7 +32,15 @@ const router = createBrowserRouter([
   },
   {
     path: "course",
-    element: <Course />
+    element: <Course_2 />
+  },
+  {
+    path: "login",
+    element: <Login />
+  },
+  {
+    path: "profile",
+    element: <Profile />
   },
 ]);
 
