@@ -4,6 +4,7 @@ from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from bson.objectid import ObjectId
 from model import User
 
+
 # Initialize MongoDB client
 client = motor.motor_asyncio.AsyncIOMotorClient('mongodb+srv://parin561a:codecamp@cluster0.mcyeg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
 database = client.CurriculumDB
@@ -14,13 +15,21 @@ fs = AsyncIOMotorGridFSBucket(database)  # Initialize GridFS for async file stor
 # Helper function สำหรับแปลง ObjectId ให้เป็น string
 def user_helper(user) -> dict:
     return {
-        "id": str(user["_id"]),  # แปลง ObjectId ให้เป็น string
+        "id": str(user["_id"]),  # แปลง ObjectId เป็น string
         "name": user["name"],
+        "gmail": user["gmail"],
         "year": user["year"],
+        "career": user.get("career", None)  # เพิ่ม career
     }
 
 # ฟังก์ชันสำหรับบันทึกข้อมูลผู้ใช้และแปลง ObjectId
 async def create_user(user: User):
+    # ตรวจสอบว่ามีผู้ใช้ที่มี Gmail นี้อยู่แล้วหรือไม่
+    existing_user = await users_collection.find_one({"gmail": user.gmail})
+    if existing_user:
+        return user_helper(existing_user)  # ถ้ามีอยู่แล้ว ให้คืนค่าผู้ใช้เดิม
+
+    # ถ้าไม่มีผู้ใช้ที่มี Gmail นี้ สร้างผู้ใช้ใหม่
     user_data = user.dict()  # แปลงเป็น dictionary
     result = await users_collection.insert_one(user_data)  # บันทึกข้อมูลลง MongoDB
     new_user = await users_collection.find_one({"_id": result.inserted_id})  # ดึงข้อมูลผู้ใช้ที่บันทึกใหม่
@@ -31,7 +40,7 @@ async def create_user(user: User):
 async def fetch_curriculum_by_year(year: int):
     document = await curriculum_collection.find_one({"year": year})
     if document:
-        document["_id"] = str(document["_id"])  # แปลง ObjectId ให้เป็น string
+        document["_id"] = str(document["_id"])  # แปลง ObjectId เป็น string
         return document
     return None
 
@@ -65,6 +74,12 @@ async def initialize_curriculums():
 # ฟังก์ชันสำหรับดึงข้อมูลผู้ใช้จากชื่อ
 async def get_user_by_name(name: str):
     document = await users_collection.find_one({"name": name})
+    if document:
+        return user_helper(document)
+    return None
+
+async def get_user_by_gmail(gmail: str):
+    document = await users_collection.find_one({"gmail": gmail})
     if document:
         return user_helper(document)
     return None

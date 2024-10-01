@@ -31,21 +31,22 @@ async def create_user_and_get_curriculum(user: User):
     raise HTTPException(404, f"No curriculum found for year {user.year}")
 
 
-# API สำหรับดึงข้อมูลวิชาเรียนตามปีการศึกษา
-@app.get("/api/curriculum/{year}")
-async def get_curriculum_by_year(year: int):
-    curriculum = await fetch_curriculum_by_year(year)
-    if curriculum:
-        return curriculum
-    raise HTTPException(404, f"No curriculum found for year {year}")
-
-@app.get("/api/user/{name}")
-async def get_user_by_name(name: str):
-    user = await users_collection.find_one({"name": name})  # ดึงข้อมูลผู้ใช้จาก MongoDB
+# API สำหรับดึงข้อมูลผู้ใช้และวิชาเรียนตาม Gmail
+@app.get("/api/user/{gmail}")
+async def get_user_by_gmail(gmail: str):
+    user = await users_collection.find_one({"gmail": gmail})  # ดึงข้อมูลผู้ใช้โดยใช้ gmail แทน name
     if user:
-        curriculum = await fetch_curriculum_by_year(user['year'])  # ดึงข้อมูลวิชาตามปีการศึกษาของผู้ใช้
-        return {"user": user_helper(user), "curriculum": curriculum}  # ใช้ user_helper เพื่อแปลง ObjectId
-    raise HTTPException(404, f"User {name} not found")
+        curriculum = await fetch_curriculum_by_year(user['year'])
+        return {"user": user_helper(user), "curriculum": curriculum}
+    raise HTTPException(404, f"User {gmail} not found")
+
+# @app.get("/api/user/{name}")
+# async def get_user_by_name(name: str):
+#     user = await users_collection.find_one({"name": name})  # ดึงข้อมูลผู้ใช้จาก MongoDB
+#     if user:
+#         curriculum = await fetch_curriculum_by_year(user['year'])  # ดึงข้อมูลวิชาตามปีการศึกษาของผู้ใช้
+#         return {"user": user_helper(user), "curriculum": curriculum}  # ใช้ user_helper เพื่อแปลง ObjectId
+#     raise HTTPException(404, f"User {name} not found")
 
 
 
