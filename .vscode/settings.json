@@ -1,0 +1,8 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/12edf8ee-c667-452e-9201-4abf87abbf3d/resourceGroups/webproproject2024_group/providers/Microsoft.Web/sites/webproproject2024",
+    "appService.deploySubpath": "web_pro\\build",
+    "appService.zipIgnorePattern": [
+        "node_modules{,/**}",
+        ".vscode{,/**}"
+    ]
+}

@@ -1,0 +1,35 @@
+.news-section {
+    margin-top: 30px;
+}
+
+.news-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+}
+
+.news-article {
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.news-article h3 {
+    margin: 0;
+}
+
+.news-article p {
+    margin: 10px 0;
+}
+
+.news-article a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.news-article img {
+    max-width: 100%;
+    height: auto;
+    margin-top: 10px;
+}

@@ -12,6 +12,7 @@ import Book from './components/Book/Book';
 import Course_2 from './components/Course/Course_2';
 import Login from './components/Login/Login';
 import Profile from './components/Login/Profile';
+import YoutubeSearch from './components/News/YoutubeSearch';
 
 const router = createBrowserRouter([
   {
@@ -24,7 +25,7 @@ const router = createBrowserRouter([
   },
   {
     path: "video",
-    element: <Video />
+    element: <YoutubeSearch />
   },
   {
     path: "book",
