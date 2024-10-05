@@ -8,6 +8,7 @@ from googleapiclient.discovery import build
 from typing import List
 import random  # Added to randomize career search terms
 import requests
+from pydantic import BaseModel, EmailStr
 
 app = FastAPI()
 
@@ -191,4 +192,32 @@ def get_news(query: str = Query(...)):
     else:
         print(f"Invalid career type: {query}")  # Log invalid career types
         raise HTTPException(status_code=400, detail="Invalid career type")
+    
+
+class RatingRequest(BaseModel):
+    gmail: EmailStr
+    subject: str
+    rating: int
+
+@app.post("/api/user/rating")
+async def rate_subject(request: RatingRequest):
+    if request.rating < 1 or request.rating > 5:
+        raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
+    
+    # ค้นหาและอัปเดตผู้ใช้ในฐานข้อมูล
+    user = await users_collection.find_one({"gmail": request.gmail})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if "ratings" not in user:
+        user["ratings"] = {}
+    user["ratings"][request.subject] = request.rating
+
+    await users_collection.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"ratings": user["ratings"]}}
+    )
+
+    return {"message": "Rating updated successfully"}
+  
 

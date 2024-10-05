@@ -19,7 +19,8 @@ def user_helper(user) -> dict:
         "name": user["name"],
         "gmail": user["gmail"],
         "year": user["year"],
-        "career": user.get("career", None)  # เพิ่ม career
+        "career": user.get("career", None),  # เพิ่ม career
+        "ratings": user.get("ratings", {})  # เพิ่ม ratings
     }
 
 # ฟังก์ชันสำหรับบันทึกข้อมูลผู้ใช้และแปลง ObjectId

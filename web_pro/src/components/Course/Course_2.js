@@ -21,15 +21,27 @@ function Course_2() {
 
   useEffect(() => {
     if (profile && profile.email) {
-      axios.get(`http://localhost:8000/api/user/${profile.email}`)
+      axios.get(`http://localhost:8000/api/user/${encodeURIComponent(profile.email)}`)
         .then(res => {
           setCurriculum(res.data.curriculum);
           setYear(res.data.user.year);
           setCareer(res.data.user.career || "No career selected");
           setIsReturningUser(true);
+          console.log("res.data.user" , res.data.user , "res.data.user.ratings" , res.data.user.ratings)
+
+          // ดึงข้อมูลการให้คะแนนและเก็บไว้ใน state
+          if (res.data.user && res.data.user.ratings) {
+            const updatedRatings = {};
+            res.data.curriculum.subjects.forEach((subject) => {
+              updatedRatings[subject.name] = res.data.user.ratings[subject.name] || 0;
+            });
+            setRatings(updatedRatings);
+            console.log('Ratings from backend:', updatedRatings); // Debugging log for ratings
+          }
           setIsLoading(false);
         })
         .catch(err => {
+          console.error('Error fetching user data:', err);
           setIsReturningUser(false);
           setIsLoading(false);
         });
@@ -79,11 +91,18 @@ function Course_2() {
   };
 
   const onStarClick = (nextValue, prevValue, index) => {
-    setRatings({ ...ratings, [index]: nextValue });
-    axios.post(`http://localhost:8000/api/user/rating`, {
-      name: profile.name,
-      subjectIndex: index,
+    const subjectName = curriculum.subjects[index].name;
+    setRatings({ ...ratings, [subjectName]: nextValue });
+
+    // บันทึกคะแนนลงในฐานข้อมูล
+    axios.post('http://localhost:8000/api/user/rating', {
+      gmail: profile.email,
+      subject: subjectName,
       rating: nextValue,
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
     }).catch(err => {
       console.error('Error:', err);
     });
@@ -94,7 +113,9 @@ function Course_2() {
     if (!curriculum) return null;
 
     const labels = curriculum.subjects.map(subject => subject.name);
-    const data = labels.map((_, index) => ratings[index] || 0); // Get ratings for each subject, default to 0
+    const data = labels.map(subjectName => ratings[subjectName] || 0); // Get ratings for each subject, default to 0
+
+    console.log('Chart data:', data); // Debugging log for chart data
 
     return {
       labels,
@@ -170,9 +191,9 @@ function Course_2() {
               <div className="subject-container">
                 {curriculum.subjects && curriculum.subjects.map((subject, index) => (
                   <div key={index} className="subject-wrapper">
-                    <div 
-                      className="subject-box" 
-                      onClick={() => handleSubjectClick(subject)} 
+                    <div
+                      className="subject-box"
+                      onClick={() => handleSubjectClick(subject)}
                       style={{ cursor: 'pointer' }}
                     >
                       <h3>{subject.name}</h3>
@@ -189,10 +210,10 @@ function Course_2() {
                           {/* Star rating inside the popup */}
                           <div className="rating-section">
                             <h4>Rate this subject:</h4>
-                            <StarRatingComponent 
-                              name={`rating-${index}`} 
+                            <StarRatingComponent
+                              name={`rating-${index}`}
                               starCount={5}
-                              value={ratings[index] || 0}
+                              value={ratings[subject.name] || 0}
                               onStarClick={(nextValue, prevValue) => onStarClick(nextValue, prevValue, index)}
                             />
                           </div>
@@ -208,23 +229,23 @@ function Course_2() {
 
             {/* Display the Bar Chart on the right */}
             <div className="chart-container">
-              {generateChartData() && (
-                <>
-                  <h3>User Rating Chart</h3>
-                  <Bar
-                    data={generateChartData()}
-                    options={{
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                          max: 5
-                        }
+              <h3>User Rating Chart</h3>
+              {generateChartData() && generateChartData().datasets[0].data.some(value => value > 0) ? (
+                <Bar
+                  data={generateChartData()}
+                  options={{
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        max: 5
                       }
-                    }}
-                    width={300}  // Adjust the width of the chart
-                    height={200}  // Adjust the height of the chart
-                  />
-                </>
+                    }
+                  }}
+                  width={300}  // Adjust the width of the chart
+                  height={200}  // Adjust the height of the chart
+                />
+              ) : (
+                <p>No ratings available yet.</p>
               )}
             </div>
           </div>
