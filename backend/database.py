@@ -28,16 +28,18 @@ def user_helper(user) -> dict:
 
 # ฟังก์ชันสำหรับบันทึกข้อมูลผู้ใช้และแปลง ObjectId
 async def create_user(user: User):
-    # ตรวจสอบว่ามีผู้ใช้ที่มี Gmail นี้อยู่แล้วหรือไม่
+    # Check if a user with the same Gmail already exists
     existing_user = await users_collection.find_one({"gmail": user.gmail})
     if existing_user:
-        return user_helper(existing_user)  # ถ้ามีอยู่แล้ว ให้คืนค่าผู้ใช้เดิม
+        return user_helper(existing_user)  # Return the existing user if found
 
-    # ถ้าไม่มีผู้ใช้ที่มี Gmail นี้ สร้างผู้ใช้ใหม่
-    user_data = user.dict()  # แปลงเป็น dictionary
-    result = await users_collection.insert_one(user_data)  # บันทึกข้อมูลลง MongoDB
-    new_user = await users_collection.find_one({"_id": result.inserted_id})  # ดึงข้อมูลผู้ใช้ที่บันทึกใหม่
-    return user_helper(new_user)  # ส่งข้อมูลกลับไป
+    # If the user doesn't exist, create a new user
+    user_data = user.dict()
+    user_data['schedules'] = {}  # Initialize schedules as an empty dictionary
+    result = await users_collection.insert_one(user_data)
+    new_user = await users_collection.find_one({"_id": result.inserted_id})
+    return user_helper(new_user)
+
 
 
 # ฟังก์ชันสำหรับดึงข้อมูลวิชาเรียนตามปีการศึกษา

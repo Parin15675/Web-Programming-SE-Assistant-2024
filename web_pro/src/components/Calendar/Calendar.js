@@ -240,8 +240,10 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
 
     const getSchedule = (day, minute) => {
         const dayKey = formatDate(day);
-        return schedules[dayKey]?.[minute] || {}; // Access the minute's schedule
+        // Safely check if schedules exist and contain the key for the day
+        return schedules && schedules[dayKey] ? schedules[dayKey][minute] || {} : {};
     };
+    
 
     const resetForm = () => {
         setTitle("");       // Reset title

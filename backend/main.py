@@ -122,11 +122,18 @@ async def create_user_and_get_curriculum(user: User):
 # API to fetch user and curriculum by Gmail
 @app.get("/api/user/{gmail}")
 async def get_user_by_gmail(gmail: str):
-    user = await users_collection.find_one({"gmail": gmail})  # Fetch user by Gmail
+    user = await users_collection.find_one({"gmail": gmail})
     if user:
         curriculum = await fetch_curriculum_by_year(user['year'])
-        return {"user": user_helper(user), "curriculum": curriculum}
+        user_data = user_helper(user)
+
+        # If schedules are not set, initialize as an empty dictionary
+        if not user_data.get("schedules"):
+            user_data["schedules"] = {}
+
+        return {"user": user_data, "curriculum": curriculum}
     raise HTTPException(404, f"User {gmail} not found")
+
 
 # API for uploading PDFs to MongoDB
 @app.post("/upload-book/")

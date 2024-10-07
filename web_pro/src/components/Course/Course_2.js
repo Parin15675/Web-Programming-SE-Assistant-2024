@@ -19,6 +19,8 @@ function Course_2() {
   const [careerImportance, setCareerImportance] = useState({});
 
   const profile = useSelector(state => state.profile);
+  
+  
 
   useEffect(() => {
     if (profile && profile.email) {
@@ -87,9 +89,36 @@ function Course_2() {
     }
   };
 
+  
+
   const handleClosePopup = () => {
     setShowPopup(false);
     setSelectedSubject(null);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    if (!profile || !profile.name || !profile.email || !year || !career) {
+      console.error("Missing profile, email, year or career information");
+      return;
+    }
+
+    const userData = {
+      name: profile.name,
+      gmail: profile.email,
+      year,
+      career,
+    };
+
+    axios.post('http://localhost:8000/api/user/', userData)
+      .then(res => {
+        setCurriculum(res.data.curriculum);
+        setIsReturningUser(true);
+      })
+      .catch(err => {
+        console.error('Error:', err);
+      });
   };
 
   const onStarClick = (nextValue, prevValue, index) => {
