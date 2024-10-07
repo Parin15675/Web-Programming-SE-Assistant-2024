@@ -1,0 +1,64 @@
+/* Modal overlay background */
+.youtube-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5); /* Dark semi-transparent background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* Modal content box */
+.youtube-modal-content {
+    background-color: white;
+    width: 80%;
+    max-width: 1000px;
+    padding: 20px;
+    border-radius: 10px;
+    display: flex; /* Flex layout for side-by-side content */
+    flex-direction: column;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+    
+}
+
+/* Left side of the modal (YouTube video) */
+.left {
+    flex: 1; /* Take up half of the modal */
+    margin-right: 20px; /* Add spacing between video and calendar */
+}
+
+.left .video-display {
+    width: 100%; /* Full width of the left container */
+    height: 300px; /* Set a decent height for the video display */
+    border-radius: 8px;
+}
+
+/* Right side of the modal (Calendar) */
+.right {
+    flex: 1; /* Take up half of the modal */
+    max-height: 400px; /* Limit the height for the calendar */
+    overflow-y: auto; /* Add vertical scroll if needed */
+    padding: 10px;
+    border-left: 1px solid #ddd; /* Divider between video and calendar */
+}
+
+/* Button styles inside the modal */
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    margin-top: 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}

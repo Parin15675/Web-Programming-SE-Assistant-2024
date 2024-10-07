@@ -1,0 +1,27 @@
+/* Style for the video container */
+.video-container {
+    display: flex;
+    flex-wrap: wrap; /* Allows wrapping if there are many videos */
+    justify-content: space-around; /* Space out the videos */
+    margin-top: 20px;
+    max-width: 2000px; /* Set a maximum width for the container */
+    padding: 10px; /* Add padding around the container */
+    box-sizing: border-box; /* Include padding and border in the element’s total width and height */
+    border: 1px solid #ddd; /* Optional: Add a border to the container */
+    border-radius: 8px; 
+}
+
+/* Style for individual video items */
+.video {
+    margin: 10px;
+    text-align: center; /* Center the video titles */
+    box-sizing: border-box; /* Include padding and border in the element’s total width and height */
+    width: 300px; /* Set width for the video box */
+}
+
+/* Style for the iframe */
+.video iframe {
+    width: 100%; /* Make iframe take the full width of its container */
+    height: 180px; /* Set a better height for video display */
+    border: none; /* Remove default border */
+}

@@ -3,21 +3,24 @@ import axios from 'axios';
 import Nav from '../Nav';
 import { useSelector } from 'react-redux';
 import StarRatingComponent from 'react-star-rating-component';
-import { Bar } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';  // We will use Line chart for both datasets
 import 'chart.js/auto'; // Import Chart.js
 import "./Course_2.css";
 
 function Course_2() {
   const [year, setYear] = useState(1);
-  const [career, setCareer] = useState('');
   const [curriculum, setCurriculum] = useState(null);
   const [isReturningUser, setIsReturningUser] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [ratings, setRatings] = useState({});
+  const [career, setCareer] = useState('');  // Hold the career from backend
+  const [careerImportance, setCareerImportance] = useState({});
 
   const profile = useSelector(state => state.profile);
+  
+  
 
   useEffect(() => {
     if (profile && profile.email) {
@@ -25,18 +28,15 @@ function Course_2() {
         .then(res => {
           setCurriculum(res.data.curriculum);
           setYear(res.data.user.year);
-          setCareer(res.data.user.career || "No career selected");
+          setCareer(res.data.user.career || "No career selected");  // Set career from backend
           setIsReturningUser(true);
-          console.log("res.data.user" , res.data.user , "res.data.user.ratings" , res.data.user.ratings)
 
-          // ดึงข้อมูลการให้คะแนนและเก็บไว้ใน state
           if (res.data.user && res.data.user.ratings) {
             const updatedRatings = {};
             res.data.curriculum.subjects.forEach((subject) => {
               updatedRatings[subject.name] = res.data.user.ratings[subject.name] || 0;
             });
             setRatings(updatedRatings);
-            console.log('Ratings from backend:', updatedRatings); // Debugging log for ratings
           }
           setIsLoading(false);
         })
@@ -49,6 +49,52 @@ function Course_2() {
       setIsLoading(false);
     }
   }, [profile]);
+
+  // Predefined importance levels based on career
+  useEffect(() => {
+    const careerImportanceLevels = {
+      "Data Analysis": {
+        "Math 101": 4,
+        "Physics 101": 3,
+        "Programming 101": 5,
+        // Add other subjects and their importance
+      },
+      "Software Engineer": {
+        "Math 101": 3,
+        "Physics 101": 2,
+        "Programming 101": 5,
+      },
+      "Web Development": {
+        "Math 101": 2,
+        "Physics 101": 1,
+        "Programming 101": 5,
+      },
+      "Other": {
+        "Math 101": 3,
+        "Physics 101": 3,
+        "Programming 101": 3,
+      }
+    };
+
+    setCareerImportance(careerImportanceLevels[career] || {});
+  }, [career]);
+
+  const handleSubjectClick = (subject) => {
+    if (selectedSubject === subject) {
+      setShowPopup(false);
+      setSelectedSubject(null);
+    } else {
+      setSelectedSubject(subject);
+      setShowPopup(true);
+    }
+  };
+
+  
+
+  const handleClosePopup = () => {
+    setShowPopup(false);
+    setSelectedSubject(null);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -75,26 +121,10 @@ function Course_2() {
       });
   };
 
-  const handleSubjectClick = (subject) => {
-    if (selectedSubject === subject) {
-      setShowPopup(false);
-      setSelectedSubject(null);
-    } else {
-      setSelectedSubject(subject);
-      setShowPopup(true);
-    }
-  };
-
-  const handleClosePopup = () => {
-    setShowPopup(false);
-    setSelectedSubject(null);
-  };
-
   const onStarClick = (nextValue, prevValue, index) => {
     const subjectName = curriculum.subjects[index].name;
     setRatings({ ...ratings, [subjectName]: nextValue });
 
-    // บันทึกคะแนนลงในฐานข้อมูล
     axios.post('http://localhost:8000/api/user/rating', {
       gmail: profile.email,
       subject: subjectName,
@@ -108,26 +138,32 @@ function Course_2() {
     });
   };
 
-  // Generate data for the Bar Chart
-  const generateChartData = () => {
-    if (!curriculum) return null;
+  // Generate data for the Line Chart (combined graph)
+  const generateCombinedChartData = () => {
+    if (!curriculum || !careerImportance) return null;
 
     const labels = curriculum.subjects.map(subject => subject.name);
-    const data = labels.map(subjectName => ratings[subjectName] || 0); // Get ratings for each subject, default to 0
-
-    console.log('Chart data:', data); // Debugging log for chart data
+    const userRatingsData = labels.map(subjectName => ratings[subjectName] || 0);  // User's ratings
+    const careerImportanceData = labels.map(subjectName => careerImportance[subjectName] || 0);  // Career importance
 
     return {
       labels,
       datasets: [
         {
           label: 'User Ratings',
+          fill: false,
+          lineTension: 0.1,
           backgroundColor: 'rgba(75,192,192,0.4)',
           borderColor: 'rgba(75,192,192,1)',
-          borderWidth: 1,
-          hoverBackgroundColor: 'rgba(75,192,192,0.6)',
-          hoverBorderColor: 'rgba(75,192,192,1)',
-          data
+          data: userRatingsData
+        },
+        {
+          label: `${career} Career Importance`,
+          fill: false,
+          lineTension: 0.1,
+          backgroundColor: 'rgba(153,102,255,0.4)',
+          borderColor: 'rgba(153,102,255,1)',
+          data: careerImportanceData
         }
       ]
     };
@@ -208,11 +244,11 @@ function Course_2() {
                           <p>Description: {subject.description}</p>
                           
                           {/* Star rating inside the popup */}
-                          <div className="rating-section">
-                            <h4>Rate this subject:</h4>
+                          <div className="star-rating">
+                            <h3>Your Rating:</h3>
                             <StarRatingComponent
-                              name={`rating-${index}`}
-                              starCount={5}
+                              name={subject.name}
+                              starCount={10}
                               value={ratings[subject.name] || 0}
                               onStarClick={(nextValue, prevValue) => onStarClick(nextValue, prevValue, index)}
                             />
@@ -227,25 +263,20 @@ function Course_2() {
               </div>
             </div>
 
-            {/* Display the Bar Chart on the right */}
             <div className="chart-container">
-              <h3>User Rating Chart</h3>
-              {generateChartData() && generateChartData().datasets[0].data.some(value => value > 0) ? (
-                <Bar
-                  data={generateChartData()}
+              <h2>User Ratings vs {career} Importance</h2>
+              {generateCombinedChartData() && (
+                <Line
+                  data={generateCombinedChartData()}
                   options={{
                     scales: {
                       y: {
                         beginAtZero: true,
-                        max: 5
+                        max: 10
                       }
                     }
                   }}
-                  width={300}  // Adjust the width of the chart
-                  height={200}  // Adjust the height of the chart
                 />
-              ) : (
-                <p>No ratings available yet.</p>
               )}
             </div>
           </div>

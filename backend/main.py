@@ -2,10 +2,10 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from model import User
-from database import create_user, fetch_curriculum_by_year, initialize_curriculums, get_user_by_name, user_helper, users_collection, upload_pdf, get_pdf, fetch_books
+from database import create_user, fetch_curriculum_by_year, initialize_curriculums, get_user_by_name, user_helper, users_collection, upload_pdf, get_pdf, fetch_books,save_user_schedules, get_user_schedules
 import io  # Added for handling byte streams
 from googleapiclient.discovery import build
-from typing import List
+from typing import List, Dict
 import random  # Added to randomize career search terms
 import requests
 from pydantic import BaseModel, EmailStr
@@ -40,6 +40,16 @@ def youtube_search(query: str):
     ]
     
     return available_videos
+
+def youtube_videos(video_ids: List[str]):
+    youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
+    request = youtube.videos().list(
+        part='contentDetails',
+        id=','.join(video_ids)
+    )
+    response = request.execute()
+
+    return response.get('items', [])
 
 # Define career keywords for each career type
 career_keywords = {
@@ -81,6 +91,20 @@ def search(query: str = Query(..., description="Search term for YouTube")):
     
     return limited_results
 
+# New endpoint for fetching video details like contentDetails (duration)
+@app.get("/videos", response_model=List[dict])
+def get_video_details(video_ids: str = Query(..., description="Comma-separated list of YouTube video IDs")):
+    if not video_ids:
+        raise HTTPException(status_code=400, detail="Missing video_ids parameter")
+    
+    video_id_list = video_ids.split(',')
+    details = youtube_videos(video_id_list)
+    
+    if not details:
+        raise HTTPException(status_code=404, detail="No video details found")
+    
+    return details
+
 # Initialize curriculum when the server starts
 @app.on_event("startup")
 async def startup_event():
@@ -98,11 +122,18 @@ async def create_user_and_get_curriculum(user: User):
 # API to fetch user and curriculum by Gmail
 @app.get("/api/user/{gmail}")
 async def get_user_by_gmail(gmail: str):
-    user = await users_collection.find_one({"gmail": gmail})  # Fetch user by Gmail
+    user = await users_collection.find_one({"gmail": gmail})
     if user:
         curriculum = await fetch_curriculum_by_year(user['year'])
-        return {"user": user_helper(user), "curriculum": curriculum}
+        user_data = user_helper(user)
+
+        # If schedules are not set, initialize as an empty dictionary
+        if not user_data.get("schedules"):
+            user_data["schedules"] = {}
+
+        return {"user": user_data, "curriculum": curriculum}
     raise HTTPException(404, f"User {gmail} not found")
+
 
 # API for uploading PDFs to MongoDB
 @app.post("/upload-book/")
@@ -201,7 +232,7 @@ class RatingRequest(BaseModel):
 
 @app.post("/api/user/rating")
 async def rate_subject(request: RatingRequest):
-    if request.rating < 1 or request.rating > 5:
+    if request.rating < 1 or request.rating > 10:
         raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
     
     # ค้นหาและอัปเดตผู้ใช้ในฐานข้อมูล
@@ -220,4 +251,36 @@ async def rate_subject(request: RatingRequest):
 
     return {"message": "Rating updated successfully"}
   
+
+# Schedule model definition
+class Schedule(BaseModel):
+    title: str
+    details: str
+    color: str
+    startMinute: int
+    endMinute: int
+    youtubeVideoId: str = None  # Optional YouTube video ID
+
+# Request model for schedules
+class ScheduleRequest(BaseModel):
+    gmail: EmailStr
+    schedules: Dict[str, Dict[int, Schedule]]  # Dict[date, Dict[minute, Schedule details]]
+
+# API to save user schedules
+@app.post("/save_schedules/")
+async def save_schedules(data: ScheduleRequest):
+    try:
+        result = await save_user_schedules(data.gmail, data.schedules)
+        return result
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+# API to fetch user schedules
+@app.get("/get_schedules/{gmail}")
+async def get_schedules(gmail: str):
+    try:
+        schedules = await get_user_schedules(gmail)
+        return schedules
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
 

@@ -29,6 +29,7 @@
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
   margin-top: 10px;  /* Adds space between the subject box and popup */
+  max-width: 500px;  /* Restrict popup width */
 }
 
 .popup-content {
@@ -40,20 +41,46 @@
   display: block;
 }
 
+/* Content container for layout */
 .content-container {
   display: flex;
-  justify-content: space-between; /* Ensure space between the two sections */
-  align-items: flex-start; /* Align items at the top of the container */
-  width: 80%; /* Full width of the container */
+  justify-content: space-between;  /* Space between subject list and chart */
+  align-items: flex-start;  /* Align items to the top */
+  width: 100%;  /* Full container width */
+  gap: 20px;  /* Space between the subject list and chart */
 }
 
+/* Subject list styling */
 .subject-list {
-  flex: 1; /* Take up 50% of the container */
-  margin-right: 20px; /* Add space between the subject list and the chart */
+  flex: 1;  /* Take up 50% of the container */
+  margin-right: 20px;  /* Space between subject list and chart */
 }
 
+/* Chart container styling */
 .chart-container {
-  flex: 1; /* Take up 50% of the container */
-  width: 100%; /* Full width of its section */
+  flex: 1;  /* Take up 50% of the container */
+  max-width: 600px;  /* Set a max width for the chart to prevent overflow */
   height: auto;
+}
+
+/* Responsive styling */
+@media (max-width: 768px) {
+  .content-container {
+    flex-direction: column;  /* Stack subject list and chart on small screens */
+    align-items: center;
+  }
+  
+  .subject-list,
+  .chart-container {
+    width: 100%;  /* Full width for smaller screens */
+    margin: 0;    /* Remove margin */
+  }
+
+  .subject-box {
+    width: 100%;  /* Make subject box responsive */
+  }
+
+  .popup {
+    width: 90%;  /* Adjust popup width for small screens */
+  }
 }

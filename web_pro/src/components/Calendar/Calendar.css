@@ -1,0 +1,347 @@
+/* Base calendar styling */
+.calendar {
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    gap: 10px;
+    width: 50%;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+}
+
+/* Calendar controls (navigation buttons and view toggle buttons) */
+.calendar-controls {
+    display: flex;
+    align-items: center;
+
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+    position: relative;
+    
+}
+
+.view-buttons {
+    display: flex;
+    gap: 10%;
+    width: 30%;
+    margin-right: 20%;
+}
+
+.view-buttons button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.view-buttons button:hover {
+    background-color: #0056b3;
+}
+
+.calendar-controls button {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.calendar-controls button:hover {
+    background-color: #0056b3;
+}
+
+/* Calendar header (days of the week) */
+.calendar-header {
+    display: grid;
+    grid-template-columns: 60px repeat(7, 1fr); /* Match week view with the hour label space */
+    background-color: #007bff;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+    border-bottom: 1px solid #ddd;
+    padding: 5px 0;
+}
+
+/* Calendar header (days of the week) */
+.calendar-header-month{
+    display: grid;
+    grid-template-columns: repeat(7, 1fr); /* Match week view with the hour label space */
+    background-color: #007bff;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+    border-bottom: 1px solid #ddd;
+    padding: 5px 0;
+}
+
+.calendar-header-day {
+    padding: 5%;
+}
+
+.calendar-header-day-day {
+    padding: 5%;
+    margin-left: 100%;
+    width: 100%;
+}
+
+.calendar-header .empty-column {
+    background-color: transparent; /* This empty column matches with the hour labels */
+    width: 60px;
+}
+
+/* Scrollable calendar body */
+.calendar-body-container {
+    height: 300px; /* Set a fixed height */
+    overflow-y: auto; /* Ensure the container is scrollable */
+}
+
+/* General calendar body */
+.calendar-body {
+    border-top: 1px solid #ddd;
+}
+
+/* Month view */
+.calendar-body-month {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr); /* Ensure columns are consistent */
+    gap: 1px;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+}
+
+.calendar-day-month {
+    border: 1px solid #ddd;
+    padding: 20px; /* Increase padding to improve appearance */
+    text-align: center;
+    min-height: 100px; /* Add minimum height for better visual structure */
+    box-sizing: border-box; /* Ensure padding and border are included in the height and width */
+}
+
+/* Hour and half-hour slots for week view */
+.calendar-hour-row {
+    display: grid; 
+    grid-template-columns: 60px repeat(7, 1fr); /* Fixed width for hour label and equal columns for days */
+    border-bottom: 1px solid #ddd;
+}
+
+.calendar-hour-label {
+    width: 60px; /* Ensure the label matches the header space */
+    text-align: right;
+    padding-right: 10px;
+    background-color: #f0f0f0;
+    line-height: 2;
+}
+
+.calendar-hour-label.day-view-label {
+    text-align: right;
+    padding-right: 10px;
+    background-color: #f0f0f0;
+    line-height: 2; /* Adjust line height */
+}
+
+.calendar-hour-row.day-view-row {
+    display: flex; /* Use flex for the hour row */
+    border-bottom: 1px solid #ddd;
+    width: 100%;
+    height: 60px;
+}
+
+.calendar-day-column {
+    border-right: 1px solid #ddd;
+}
+
+.calendar-day-column:last-child {
+    border-right: none; /* Remove the border for the last column */
+}
+
+/* Slot styles for week view */
+.calendar-minute-slot {
+    cursor: pointer;
+    position: relative;
+    height: 1em; /* Height for minute slots */
+    width: 94%;
+    display: flex; /* Use flexbox for centering */
+    align-items: center; /* Center vertically */
+    padding: 0 5px; /* Add horizontal padding */
+    color: #000; /* Default text color */
+    font-size: 12px; /* Adjust font size as needed */
+    border-right: 1px solid #ddd; /* Add vertical divider */
+}
+
+.calendar-minute-slot:last-child {
+    border-right: none; /* Remove the right border on the last slot */
+}
+
+/* Hover effect for minute slots */
+.calendar-minute-slot:hover {
+    background-color: rgba(0, 123, 255, 0.1); /* Hover effect */
+}
+
+/* Day view specific styles */
+.calendar-body.day-view {
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-minute-slots.day-view-slots {
+    flex: 1; /* Take remaining space for minute slots */
+    display: grid; /* Use grid for minute slots */
+    grid-template-rows: repeat(60, 1fr);
+    height: 100%;
+    cursor: pointer;
+}
+
+.calendar-minute-slot.day-view-slot:hover {
+    background-color: rgba(0, 123, 255, 0.1); /* Hover effect */
+}
+
+/* Event text styling */
+.event-title {
+    position: absolute; /* Position title absolutely within the slot */
+    top: 50%; /* Center vertically */
+    left: 5px; /* Adjust as needed */
+    right: 5px; /* Keep some padding on the right side to avoid overflow */
+    color: #000; /* Ensure text color is visible */
+    font-weight: bold; /* Optional: make the text bold */
+    font-size: 12px; /* Adjust font size as needed */
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden; /* Hide the overflow */
+    text-overflow: ellipsis; /* Show ellipsis when text is too long */
+    z-index: 1; /* Ensure title is on top of the background */
+}
+
+/* Modal overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px); /* Blur background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* Modal content */
+.modal-content {
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+    max-width: 500px !important; /* Force smaller width */
+    width: 100% !important; /* Ensure it uses 100% of its container's width */
+    box-sizing: border-box; /* Ensure padding doesn't affect the width */
+}
+
+.modal-actions-container {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: row;
+    justify-content: left;
+    position: relative;
+}
+
+.modal-actions-right {
+    position: absolute;
+    right: 10%;
+    width: 30%;
+    display: flex;
+    justify-content: space-between;
+}
+
+.textarea_youtube_container {
+    display: flex;
+    width: 100%;
+    margin-top: 5%;
+}
+
+.video-display {
+    width: 90%;
+    margin-left: 5%;
+}
+
+.time-selection-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.time-selection-container select {
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.color-preset-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.color-preset {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 1px solid #ddd;
+    transition: transform 0.2s;
+}
+
+.color-preset:hover {
+    transform: scale(1.1); /* Slightly enlarge on hover */
+    border: 1px solid #000; /* Add border on hover */
+}
+
+textarea {
+    width: 50%;
+    height: 100px;
+    margin-top: 10px;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 5px;
+    resize: none;
+}
+
+/* Make the calendar responsive */
+@media (max-width: 768px) {
+    .calendar-controls {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .calendar-header {
+        grid-template-columns: repeat(7, 1fr);
+    }
+
+    .calendar-body {
+        grid-template-columns: repeat(7, 1fr);
+    }
+
+    .calendar-day-month {
+        padding: 5px;
+    }
+}
+
+/* Ensure consistent box sizing */
+* {
+    box-sizing: border-box;
+}
