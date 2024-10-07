@@ -240,10 +240,8 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
 
     const getSchedule = (day, minute) => {
         const dayKey = formatDate(day);
-        // Safely check if schedules exist and contain the key for the day
-        return schedules && schedules[dayKey] ? schedules[dayKey][minute] || {} : {};
+        return schedules[dayKey]?.[minute] || {}; // Access the minute's schedule
     };
-    
 
     const resetForm = () => {
         setTitle("");       // Reset title
@@ -264,6 +262,7 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
         setDetails("");
         setColor("#e81416"); // Reset to default color
     };
+    
 
     return (
         <div className="calendar">
@@ -273,37 +272,56 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                     <button onClick={() => setView('week')}>Week</button>
                     <button onClick={() => setView('month')}>Month</button>
                 </div>
-                <button onClick={prevPeriod}>&lt;</button>
-                <span>
-                    {view === 'week' ? `${currentWeek[0].toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` :
-                        view === 'day' ? currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' }) :
-                        currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                </span>
-                <button onClick={nextPeriod}>&gt;</button>
+                <button style={{ width: '10%',}} onClick={prevPeriod}>&lt;</button>
+                <div style={{ display: 'flex', justifyContent: 'center',marginTop: '1.5%',marginLeft: '1.5%',marginRight:'1.5%',width: '20%',color: 'black', fontSize: '14px', backgroundColor: 'transparent' }}>
+                {view === 'week' 
+                    ? `${currentWeek[0].toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
+                    : view === 'day' 
+                    ? currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' }) 
+                    : currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </div>
+                <button style={{ width: '10%', margin: 'none'}} onClick={nextPeriod}>&gt;</button>
             </div>
-            <div className="calendar-header ">
-                {view !== 'month' && <div className="empty-column"></div>}
+            {(view === 'day' || view === 'week') && (
+            <div className="calendar-header">
+                {view === 'week' && <div className="empty-column"></div>} {/* Only show empty column for 'week' view */}
                 {view === 'week' ? (
-                    currentWeek.map((day, index) => (
-                        <div key={index} className="calendar-header-day">
-                            <span className="calendar-day-number" onClick={() => {
-                                setCurrentDate(resetTimeToMidnight(day));
-                                setView('day');
-                            }}>
-                                {day.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })}
-                            </span>
-                        </div>
-                    ))
-                ) : view === 'day' ? (
-                    <div className="calendar-header-day">
-                        {currentDate.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })}
+                currentWeek.map((day, index) => (
+                    <div key={index} className="calendar-header-day">
+                    <div
+                        style={{
+                        display: 'inline-block',
+                        color: 'white',
+                        fontSize: '14px',
+                        cursor: 'pointer',
+                        }}
+                        className="calendar-day-number"
+                        onClick={() => {
+                        setCurrentDate(resetTimeToMidnight(day));
+                        setView('day');
+                        }}
+                    >
+                        {day.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })}
                     </div>
+                    </div>
+                ))
                 ) : (
-                    [' ','Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
-                        <div key={index} className="calendar-header-day">{day}</div>
-                    ))
+                <div className="calendar-header-day-day">
+                    {currentDate.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })}
+                </div>
                 )}
             </div>
+            )}
+            {view === 'month' && (
+            <div className="calendar-header-month">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
+                <div key={index} className="calendar-header-day">{day}</div>
+                ))}
+            </div>
+            )}
+
+
+         
             <div className="calendar-body-container">
                 {view === 'day' ? (
                     <div className="calendar-body day-view">
@@ -325,7 +343,7 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                                                     position: 'relative'
                                                 }}
                                                 onClick={() => handleSlotClick(minuteKey, currentDate)}>
-                                                {isStartMinute && <span className="event-title">{schedule.title}</span>}
+                                                {isStartMinute && <div className="event-title">{schedule.title}</div>}
                                             </div>
                                         );
                                     })}
@@ -354,7 +372,7 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                                                             height: '0.1em',
                                                         }}
                                                         onClick={() => handleSlotClick(minuteKey, day)}>
-                                                        {isStartMinute && <span className="event-title">{schedule.title}</span>} {/* Show title only at the start minute */}
+                                                        {isStartMinute && <div className="event-title">{schedule.title}</div>} {/* Show title only at the start minute */}
                                                     </div>
                                                 );
                                             })}
@@ -367,16 +385,23 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                 ) : (
                     <div className="calendar-body-month">
                         {currentMonth.map((day, index) => (
-                            <div key={index} className="calendar-day-month">
-                                {day ? (
-                                    <span className="calendar-day-number" onClick={() => {
-                                        setCurrentDate(resetTimeToMidnight(day));
-                                        setView('day');
-                                    }}>
-                                        {day.getDate()}
-                                    </span>
-                                ) : ''}
+                        <div key={index} className="calendar-day-month">
+                            {day ? (
+                            <div
+                                className="calendar-day-number"
+                                style={{
+                                cursor: 'pointer',
+                                color: 'black'
+                                }}
+                                onClick={() => {
+                                setCurrentDate(resetTimeToMidnight(day));
+                                setView('day');
+                                }}
+                            >
+                                {day.getDate()}
                             </div>
+                            ) : ''}
+                        </div>
                         ))}
                     </div>
                 )}

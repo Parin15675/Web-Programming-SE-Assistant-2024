@@ -3,7 +3,7 @@
     display: grid;
     grid-template-rows: auto auto 1fr;
     gap: 10px;
-    width: 60%;
+    width: 50%;
     max-width: 1200px;
     margin: 0 auto;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -18,16 +18,20 @@
 /* Calendar controls (navigation buttons and view toggle buttons) */
 .calendar-controls {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 10px;
+
     background-color: #f9f9f9;
     border-bottom: 1px solid #ddd;
+    width: 100%;
+    position: relative;
+    
 }
 
 .view-buttons {
     display: flex;
-    gap: 10px;
+    gap: 10%;
+    width: 30%;
+    margin-right: 20%;
 }
 
 .view-buttons button {
@@ -70,12 +74,31 @@
     padding: 5px 0;
 }
 
+/* Calendar header (days of the week) */
+.calendar-header-month{
+    display: grid;
+    grid-template-columns: repeat(7, 1fr); /* Match week view with the hour label space */
+    background-color: #007bff;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+    border-bottom: 1px solid #ddd;
+    padding: 5px 0;
+}
+
 .calendar-header-day {
-    padding: 8px;
+    padding: 5%;
+}
+
+.calendar-header-day-day {
+    padding: 5%;
+    margin-left: 100%;
+    width: 100%;
 }
 
 .calendar-header .empty-column {
     background-color: transparent; /* This empty column matches with the hour labels */
+    width: 60px;
 }
 
 /* Scrollable calendar body */
