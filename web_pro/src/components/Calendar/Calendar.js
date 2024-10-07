@@ -26,6 +26,8 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
     const [startTime, setStartTime] = useState(null);
     const [endTime, setEndTime] = useState(null);
     const [youtubeVideoId, setYoutubeVideoId] = useState(videoId || null);
+    const [isVideoModalOpen, setIsVideoModalOpen] = useState(false); // State for the video modal
+
 
     // Auto-calculate endTime if videoDuration is provided
     useEffect(() => {
@@ -110,7 +112,12 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
             setEndTime({ minute: event.endMinute });
             setSelectedSlot({ startMinute: event.startMinute, endMinute: event.endMinute, day });
             setYoutubeVideoId(event.youtubeVideoId || null);
-            setIsModalOpen(true);
+            
+            if (event.youtubeVideoId) {
+                setIsVideoModalOpen(true);  // Open video modal if there is a YouTube video
+            } else {
+                setIsModalOpen(true);  // Open the normal modal directly if there's no video
+            }
         }
         else{
             if (!startTime) {
@@ -212,6 +219,25 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
     const clearAllSchedules = () => {
         localStorage.removeItem('calendarSchedules'); // Remove from localStorage
         setSchedules({}); // Clear schedules from state
+    };
+
+    const getDaySchedules = (day) => {
+        const dayKey = formatDate(day);
+        const events = schedules[dayKey] || {}; // Get all events for the day
+        const uniqueEvents = [];
+
+        let seenTitles = new Set(); // Track titles we've already displayed
+
+        // Loop through all the minutes of the day, only taking the first event for each title
+        Object.keys(events).forEach((minuteKey) => {
+            const event = events[minuteKey];
+            if (!seenTitles.has(event.title)) {
+                uniqueEvents.push(event);
+                seenTitles.add(event.title); // Mark this event as seen
+            }
+        });
+
+        return uniqueEvents;
     };
 
     const prevPeriod = () => {
@@ -320,8 +346,6 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
             </div>
             )}
 
-
-         
             <div className="calendar-body-container">
                 {view === 'day' ? (
                     <div className="calendar-body day-view">
@@ -384,26 +408,40 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                     </div>
                 ) : (
                     <div className="calendar-body-month">
-                        {currentMonth.map((day, index) => (
-                        <div key={index} className="calendar-day-month">
-                            {day ? (
-                            <div
-                                className="calendar-day-number"
-                                style={{
-                                cursor: 'pointer',
-                                color: 'black'
-                                }}
-                                onClick={() => {
+                {currentMonth.map((day, index) => (
+                    <div key={index} className="calendar-day-month">
+                        {day ? (
+                            <div className="calendar-day-number" style={{ cursor: 'pointer', color: 'black' }}  onClick={() => {
                                 setCurrentDate(resetTimeToMidnight(day));
                                 setView('day');
-                                }}
-                            >
+                            }}>
                                 {day.getDate()}
+                                <div className="calendar-day-events" >
+                                    {/* Display all events for this day */}
+                                    {Object.values(getDaySchedules(day)).map((event, eventIndex) => (
+                                        <div
+                                            key={eventIndex}
+                                            className="calendar-day-event"
+                                            style={{
+                                                backgroundColor: event.color,
+                                                fontSize: '10px',
+                                                marginTop: '2px',
+                                                padding: '2px',
+                                                borderRadius: '3px',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
+                                            {event.title}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                            ) : ''}
-                        </div>
-                        ))}
+                        ) : ''}
                     </div>
+                ))}
+            </div>
                 )}
             </div>
             
@@ -429,6 +467,20 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                     onDelete={handleDeleteSchedule}
                 />
             )}
+
+            {isVideoModalOpen && (
+                <VideoShowcaseModal
+                    isOpen={isVideoModalOpen}
+                    onClose={() => setIsVideoModalOpen(false)}  // Close the video modal
+                    youtubeVideoId={youtubeVideoId}
+                    onEdit={() => {
+                        setIsVideoModalOpen(false);  // Close the video modal
+                        setIsModalOpen(true);  // Open the normal modal
+                    }}
+                />
+            )}
+
+
         </div>
         
         
@@ -569,17 +621,48 @@ const Modal = ({ isOpen, onClose, title, setTitle, details, setDetails, color, s
 
                 <div className="modal-actions-container">
                     <div className="modal-actions-left">
-                        <button onClick={onClose}>Cancel</button>
+                        <button onClick={onClose} style={{ width: '100%'}}>Cancel</button>
                     </div>
                     <div className='modal-actions-right'>
-                        <button onClick={onDelete} >Delete</button>
-                        <button onClick={onSave}>Save</button>
+                        <button onClick={onDelete} style={{ width: '40%'}}>Delete</button>
+                        <button onClick={onSave} style={{ width: '40%'}}>Save</button>
                     </div>
                 </div>
             </div>
         </div>
     );
 };
+
+const VideoShowcaseModal = ({ isOpen, onClose, youtubeVideoId, onEdit }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="modal-overlay-youtube">
+            <div className="modal-content-youtube">
+                <div className="youtube-video">
+                    <iframe
+                        src={`https://www.youtube.com/embed/${youtubeVideoId}`}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        title="Event Video"
+                        className="video-display2"
+                    ></iframe>
+                </div>
+
+                <div className="modal-actions-container">
+                    <div className="modal-actions-left">
+                    </div>
+                    <div className='modal-actions-right'>
+                        <button onClick={onClose} style={{ width: '30%' }}>Cancel</button>
+                        <button onClick={onEdit} style={{ width: '30%' }}>Edit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 
 export default Calendar;
