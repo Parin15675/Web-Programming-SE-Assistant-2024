@@ -122,11 +122,16 @@
 }
 
 .calendar-day-month {
-    border: 1px solid #ddd;
-    padding: 20px; /* Increase padding to improve appearance */
+    background-color: white;
+    border: 1px solid #ccc;
+    min-height: 100px; /* Ensures consistent height */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
     text-align: center;
-    min-height: 100px; /* Add minimum height for better visual structure */
-    box-sizing: border-box; /* Ensure padding and border are included in the height and width */
+    padding: 5px;
+    box-sizing: border-box;
 }
 
 /* Hour and half-hour slots for week view */
@@ -390,4 +395,53 @@ textarea {
 /* Ensure consistent box sizing */
 * {
     box-sizing: border-box;
+}
+
+.calendar-body-month {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr); /* 7 equal columns for each day of the week */
+    grid-gap: 5px;
+    box-sizing: border-box;
+}
+
+.calendar-day-month {
+    background-color: white;
+    border: 1px solid #ccc;
+    min-height: 100px; /* Adjust to fit more events */
+    max-height: 120px; /* Ensure the height is not too large */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 5px;
+    box-sizing: border-box;
+    overflow: hidden; /* Prevent overflow */
+}
+
+.calendar-day-number {
+    font-size: 14px;
+    font-weight: bold;
+    width: 100%;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.calendar-day-events {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: hidden; /* Prevent events from making the day block larger */
+}
+
+.calendar-day-event {
+    font-size: 10px;
+    padding: 2px;
+    margin-top: 2px;
+    border-radius: 3px;
+    width: 90%;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }

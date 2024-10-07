@@ -221,6 +221,25 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
         setSchedules({}); // Clear schedules from state
     };
 
+    const getDaySchedules = (day) => {
+        const dayKey = formatDate(day);
+        const events = schedules[dayKey] || {}; // Get all events for the day
+        const uniqueEvents = [];
+
+        let seenTitles = new Set(); // Track titles we've already displayed
+
+        // Loop through all the minutes of the day, only taking the first event for each title
+        Object.keys(events).forEach((minuteKey) => {
+            const event = events[minuteKey];
+            if (!seenTitles.has(event.title)) {
+                uniqueEvents.push(event);
+                seenTitles.add(event.title); // Mark this event as seen
+            }
+        });
+
+        return uniqueEvents;
+    };
+
     const prevPeriod = () => {
         const newDate = new Date(currentDate);
         if (view === 'day') {
@@ -389,26 +408,40 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                     </div>
                 ) : (
                     <div className="calendar-body-month">
-                        {currentMonth.map((day, index) => (
-                        <div key={index} className="calendar-day-month">
-                            {day ? (
-                            <div
-                                className="calendar-day-number"
-                                style={{
-                                cursor: 'pointer',
-                                color: 'black'
-                                }}
-                                onClick={() => {
+                {currentMonth.map((day, index) => (
+                    <div key={index} className="calendar-day-month">
+                        {day ? (
+                            <div className="calendar-day-number" style={{ cursor: 'pointer', color: 'black' }}  onClick={() => {
                                 setCurrentDate(resetTimeToMidnight(day));
                                 setView('day');
-                                }}
-                            >
+                            }}>
                                 {day.getDate()}
+                                <div className="calendar-day-events" >
+                                    {/* Display all events for this day */}
+                                    {Object.values(getDaySchedules(day)).map((event, eventIndex) => (
+                                        <div
+                                            key={eventIndex}
+                                            className="calendar-day-event"
+                                            style={{
+                                                backgroundColor: event.color,
+                                                fontSize: '10px',
+                                                marginTop: '2px',
+                                                padding: '2px',
+                                                borderRadius: '3px',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
+                                            {event.title}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                            ) : ''}
-                        </div>
-                        ))}
+                        ) : ''}
                     </div>
+                ))}
+            </div>
                 )}
             </div>
             
