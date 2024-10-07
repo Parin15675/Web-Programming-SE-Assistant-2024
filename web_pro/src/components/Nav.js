@@ -1,10 +1,21 @@
-import React from 'react';
 import './homestyle.css'; 
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
 
 const Nav = () => {
-  const profile = useSelector(state => state.profile);  // Get the profile from Redux store
+  const dispatch = useDispatch();
+  const profile = useSelector(state => state.profile);
+
+  useEffect(() => {
+      const storedProfile = localStorage.getItem('profile');
+      if (storedProfile) {
+          dispatch({
+              type: 'SET_PROFILE',
+              payload: JSON.parse(storedProfile),
+          });
+      }
+  }, [dispatch]);
 
   return (
     <div className="banner">
