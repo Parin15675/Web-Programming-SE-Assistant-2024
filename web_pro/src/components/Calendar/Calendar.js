@@ -320,8 +320,6 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
             </div>
             )}
 
-
-         
             <div className="calendar-body-container">
                 {view === 'day' ? (
                     <div className="calendar-body day-view">
@@ -569,11 +567,11 @@ const Modal = ({ isOpen, onClose, title, setTitle, details, setDetails, color, s
 
                 <div className="modal-actions-container">
                     <div className="modal-actions-left">
-                        <button onClick={onClose}>Cancel</button>
+                        <button onClick={onClose} style={{ width: '100%'}}>Cancel</button>
                     </div>
                     <div className='modal-actions-right'>
-                        <button onClick={onDelete} >Delete</button>
-                        <button onClick={onSave}>Save</button>
+                        <button onClick={onDelete} style={{ width: '40%'}}>Delete</button>
+                        <button onClick={onSave} style={{ width: '40%'}}>Save</button>
                     </div>
                 </div>
             </div>

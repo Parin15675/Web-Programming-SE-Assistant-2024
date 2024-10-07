@@ -142,6 +142,7 @@
     padding-right: 10px;
     background-color: #f0f0f0;
     line-height: 2;
+    color: black;
 }
 
 .calendar-hour-label.day-view-label {
@@ -149,6 +150,7 @@
     padding-right: 10px;
     background-color: #f0f0f0;
     line-height: 2; /* Adjust line height */
+    color: black;
 }
 
 .calendar-hour-row.day-view-row {
@@ -259,12 +261,16 @@
     position: relative;
 }
 
+.modal-actions-left{
+    width: 25%;
+}
+
 .modal-actions-right {
-    position: absolute;
-    right: 10%;
-    width: 30%;
+    position: relative;
+    left: 25%;
+    width: 50%;
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
 }
 
 .textarea_youtube_container {
