@@ -26,6 +26,8 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
     const [startTime, setStartTime] = useState(null);
     const [endTime, setEndTime] = useState(null);
     const [youtubeVideoId, setYoutubeVideoId] = useState(videoId || null);
+    const [isVideoModalOpen, setIsVideoModalOpen] = useState(false); // State for the video modal
+
 
     // Auto-calculate endTime if videoDuration is provided
     useEffect(() => {
@@ -110,7 +112,12 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
             setEndTime({ minute: event.endMinute });
             setSelectedSlot({ startMinute: event.startMinute, endMinute: event.endMinute, day });
             setYoutubeVideoId(event.youtubeVideoId || null);
-            setIsModalOpen(true);
+            
+            if (event.youtubeVideoId) {
+                setIsVideoModalOpen(true);  // Open video modal if there is a YouTube video
+            } else {
+                setIsModalOpen(true);  // Open the normal modal directly if there's no video
+            }
         }
         else{
             if (!startTime) {
@@ -427,6 +434,20 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                     onDelete={handleDeleteSchedule}
                 />
             )}
+
+            {isVideoModalOpen && (
+                <VideoShowcaseModal
+                    isOpen={isVideoModalOpen}
+                    onClose={() => setIsVideoModalOpen(false)}  // Close the video modal
+                    youtubeVideoId={youtubeVideoId}
+                    onEdit={() => {
+                        setIsVideoModalOpen(false);  // Close the video modal
+                        setIsModalOpen(true);  // Open the normal modal
+                    }}
+                />
+            )}
+
+
         </div>
         
         
@@ -578,6 +599,37 @@ const Modal = ({ isOpen, onClose, title, setTitle, details, setDetails, color, s
         </div>
     );
 };
+
+const VideoShowcaseModal = ({ isOpen, onClose, youtubeVideoId, onEdit }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="modal-overlay-youtube">
+            <div className="modal-content-youtube">
+                <div className="youtube-video">
+                    <iframe
+                        src={`https://www.youtube.com/embed/${youtubeVideoId}`}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        title="Event Video"
+                        className="video-display2"
+                    ></iframe>
+                </div>
+
+                <div className="modal-actions-container">
+                    <div className="modal-actions-left">
+                    </div>
+                    <div className='modal-actions-right'>
+                        <button onClick={onClose} style={{ width: '30%' }}>Cancel</button>
+                        <button onClick={onEdit} style={{ width: '30%' }}>Edit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
 
 export default Calendar;

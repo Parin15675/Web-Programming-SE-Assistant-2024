@@ -327,6 +327,46 @@ textarea {
     resize: none;
 }
 
+.modal-overlay-youtube{
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px); /* Blur background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content-youtube {
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+    max-width: 1000px !important; /* Force smaller width */
+    width: 100% !important; /* Ensure it uses 100% of its container's width */
+    height: 70%;
+    box-sizing: border-box; /* Ensure padding doesn't affect the width */
+}
+
+.youtube-video{
+    height: 100%;
+    width: 100%;
+    padding: 5%;
+    padding-bottom: 0;
+}
+
+.video-display2 {
+    width: 100%;
+    height: 100%;
+}
+
 /* Make the calendar responsive */
 @media (max-width: 768px) {
     .calendar-controls {
