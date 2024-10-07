@@ -3,6 +3,7 @@ import gridfs  # GridFS is still used for the file handling
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from bson.objectid import ObjectId
 from model import User
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 
 
 # Initialize MongoDB client
@@ -15,13 +16,15 @@ fs = AsyncIOMotorGridFSBucket(database)  # Initialize GridFS for async file stor
 # Helper function สำหรับแปลง ObjectId ให้เป็น string
 def user_helper(user) -> dict:
     return {
-        "id": str(user["_id"]),  # แปลง ObjectId เป็น string
+        "id": str(user["_id"]),
         "name": user["name"],
         "gmail": user["gmail"],
         "year": user["year"],
-        "career": user.get("career", None),  # เพิ่ม career
-        "ratings": user.get("ratings", {})  # เพิ่ม ratings
+        "career": user.get("career", None),
+        "ratings": user.get("ratings", {}),
+        "schedules": user.get("schedules", {})  # Include schedules field
     }
+
 
 # ฟังก์ชันสำหรับบันทึกข้อมูลผู้ใช้และแปลง ObjectId
 async def create_user(user: User):
@@ -109,5 +112,39 @@ async def fetch_books():
         for file in files
     ]
 
+# Function to save user schedules to MongoDB
+async def save_user_schedules(gmail: str, schedules: dict):
+    user = await users_collection.find_one({"gmail": gmail})
+    if not user:
+        raise Exception("User not found")
+    
+    # Convert Schedule objects to dictionaries
+    schedules_with_str_keys = {
+        date: {
+            str(minute): {
+                "title": event.title,
+                "details": event.details,
+                "color": event.color,
+                "startMinute": event.startMinute,
+                "endMinute": event.endMinute,
+                "youtubeVideoId": event.youtubeVideoId
+            }
+            for minute, event in events.items()
+        }
+        for date, events in schedules.items()
+    }
+
+    await users_collection.update_one(
+        {"gmail": gmail},
+        {"$set": {"schedules": schedules_with_str_keys}}
+    )
+
+# Function to fetch user schedules from MongoDB
+async def get_user_schedules(gmail: str):
+    user = await users_collection.find_one({"gmail": gmail})
+    if user:
+        return user.get("schedules", {})
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
 
 
