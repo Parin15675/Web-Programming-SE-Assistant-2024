@@ -3,7 +3,7 @@ import axios from 'axios';
 import Nav from '../Nav';
 import { useSelector } from 'react-redux';
 import StarRatingComponent from 'react-star-rating-component';
-import { Line } from 'react-chartjs-2';  // We will use Line chart for both datasets
+import { Line } from 'react-chartjs-2'; // We will use Line chart for both datasets
 import 'chart.js/auto'; // Import Chart.js
 import "./Course_2.css";
 
@@ -15,12 +15,10 @@ function Course_2() {
   const [showPopup, setShowPopup] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [ratings, setRatings] = useState({});
-  const [career, setCareer] = useState('');  // Hold the career from backend
-  const [careerImportance, setCareerImportance] = useState({});
+  const [career, setCareer] = useState(''); // Hold the career from backend
+  const [careerRequirement, setCareerRequirement] = useState('B'); // Default letter grade requirement for the career
 
   const profile = useSelector(state => state.profile);
-  
-  
 
   useEffect(() => {
     if (profile && profile.email) {
@@ -28,7 +26,7 @@ function Course_2() {
         .then(res => {
           setCurriculum(res.data.curriculum);
           setYear(res.data.user.year);
-          setCareer(res.data.user.career || "No career selected");  // Set career from backend
+          setCareer(res.data.user.career || "No career selected");
           setIsReturningUser(true);
 
           if (res.data.user && res.data.user.ratings) {
@@ -50,33 +48,16 @@ function Course_2() {
     }
   }, [profile]);
 
-  // Predefined importance levels based on career
+  // Predefined career requirements (letter grade)
   useEffect(() => {
-    const careerImportanceLevels = {
-      "Data Analysis": {
-        "Math 101": 4,
-        "Physics 101": 3,
-        "Programming 101": 5,
-        // Add other subjects and their importance
-      },
-      "Software Engineer": {
-        "Math 101": 3,
-        "Physics 101": 2,
-        "Programming 101": 5,
-      },
-      "Web Development": {
-        "Math 101": 2,
-        "Physics 101": 1,
-        "Programming 101": 5,
-      },
-      "Other": {
-        "Math 101": 3,
-        "Physics 101": 3,
-        "Programming 101": 3,
-      }
+    const careerRequirements = {
+      "Data Analysis": "A",
+      "Software Engineer": "B",
+      "Web Development": "B",
+      "Other": "C"
     };
 
-    setCareerImportance(careerImportanceLevels[career] || {});
+    setCareerRequirement(careerRequirements[career] || "C");
   }, [career]);
 
   const handleSubjectClick = (subject) => {
@@ -89,12 +70,101 @@ function Course_2() {
     }
   };
 
-  
-
   const handleClosePopup = () => {
     setShowPopup(false);
     setSelectedSubject(null);
   };
+
+  const onStarClick = (nextValue, prevValue, index) => {
+    const subjectName = curriculum.subjects[index].name;
+    setRatings({ ...ratings, [subjectName]: nextValue });
+
+    axios.post('http://localhost:8000/api/user/rating', {
+      gmail: profile.email,
+      subject: subjectName,
+      rating: nextValue,
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).catch(err => {
+      console.error('Error:', err);
+    });
+  };
+
+  // Convert star ratings to numeric grades (1-4 scale)
+  const starRatingToNumericGrade = (stars) => {
+    if (stars === 10) return 4.0; // A
+    if (stars === 9) return 3.7;
+    if (stars === 8) return 3.0; // B
+    if (stars === 7) return 2.7;
+    if (stars === 6) return 2.0; // C
+    if (stars === 5) return 1.7;
+    if (stars === 4) return 1.0; // D
+    return 0; // F for anything 3 stars or below
+  };
+
+  // Convert letter grade requirement to numeric value for comparison and calculations
+  const letterGradeToNumeric = (grade) => {
+    switch (grade) {
+      case 'A': return 4.0;
+      case 'B+': return 3.5;
+      case 'B': return 3.0;
+      case 'C+': return 2.5;
+      case 'C': return 2.0;
+      case 'D+': return 1.5;
+      case 'D': return 1.0;
+      case 'F': return 0.0;
+      default: return 0.0;
+    }
+  };
+
+  // Calculate predicted grade only if not all subjects are rated
+  const calculatePredictedGrade = () => {
+    const requiredAverageNumeric = letterGradeToNumeric(careerRequirement);
+    let enteredGrades = 0, enteredTotal = 0;
+
+    curriculum.subjects.forEach((subject) => {
+      const stars = ratings[subject.name];
+      const numericGrade = starRatingToNumericGrade(stars);
+      if (numericGrade) {
+        enteredGrades += 1;
+        enteredTotal += numericGrade;
+      }
+    });
+
+    const remainingSubjects = curriculum.subjects.length - enteredGrades;
+    if (remainingSubjects === 0) {
+      return null; // No prediction needed if all ratings are provided
+    }
+
+    const predictedGrade = (requiredAverageNumeric * curriculum.subjects.length - enteredTotal) / remainingSubjects;
+    return predictedGrade;
+  };
+
+  // Check if achieving the required average is possible
+  const isPossibleToAchieveRequirement = () => {
+    const predictedGrade = calculatePredictedGrade();
+    return predictedGrade === null || predictedGrade <= 4.0; // It's impossible if the predicted grade exceeds the maximum of 4.0
+  };
+
+  // Calculate the current average based on numeric grades from star ratings
+  const calculateCurrentAverage = () => {
+    let enteredTotal = 0, enteredGrades = 0;
+
+    curriculum.subjects.forEach((subject) => {
+      const stars = ratings[subject.name];
+      const numericGrade = starRatingToNumericGrade(stars);
+      if (numericGrade) {
+        enteredGrades += 1;
+        enteredTotal += numericGrade;
+      }
+    });
+
+    return enteredGrades ? (enteredTotal / enteredGrades).toFixed(2) : 0;
+  };
+
+  
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -121,49 +191,33 @@ function Course_2() {
       });
   };
 
-  const onStarClick = (nextValue, prevValue, index) => {
-    const subjectName = curriculum.subjects[index].name;
-    setRatings({ ...ratings, [subjectName]: nextValue });
-
-    axios.post('http://localhost:8000/api/user/rating', {
-      gmail: profile.email,
-      subject: subjectName,
-      rating: nextValue,
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).catch(err => {
-      console.error('Error:', err);
-    });
-  };
-
   // Generate data for the Line Chart (combined graph)
   const generateCombinedChartData = () => {
-    if (!curriculum || !careerImportance) return null;
+    if (!curriculum || !careerRequirement) return null;
 
     const labels = curriculum.subjects.map(subject => subject.name);
-    const userRatingsData = labels.map(subjectName => ratings[subjectName] || 0);  // User's ratings
-    const careerImportanceData = labels.map(subjectName => careerImportance[subjectName] || 0);  // Career importance
+    const userGradesData = labels.map(subjectName => starRatingToNumericGrade(ratings[subjectName]) || 0); // User's grades
+    const predictedGrade = calculatePredictedGrade();
+    const predictedGradesData = labels.map(subjectName => starRatingToNumericGrade(ratings[subjectName]) || (predictedGrade ? Math.min(predictedGrade, 4) : 0)); // Predicted grade for missing subjects (capped at 4)
 
     return {
       labels,
       datasets: [
         {
-          label: 'User Ratings',
+          label: 'User Grades',
           fill: false,
           lineTension: 0.1,
           backgroundColor: 'rgba(75,192,192,0.4)',
           borderColor: 'rgba(75,192,192,1)',
-          data: userRatingsData
+          data: userGradesData
         },
         {
-          label: `${career} Career Importance`,
+          label: `${career} Predicted Grade`,
           fill: false,
           lineTension: 0.1,
           backgroundColor: 'rgba(153,102,255,0.4)',
           borderColor: 'rgba(153,102,255,1)',
-          data: careerImportanceData
+          data: predictedGradesData
         }
       ]
     };
@@ -235,15 +289,15 @@ function Course_2() {
                       <h3>{subject.name}</h3>
                     </div>
 
-                    {/* Popup for subject details and rating */}
+                    {/* Popup for subject details and star rating input */}
                     {showPopup && selectedSubject === subject && (
                       <div className="popup">
                         <div className="popup-content">
                           <h3>Subject Details</h3>
                           <p>Subject: {subject.name}</p>
                           <p>Description: {subject.description}</p>
-                          
-                          {/* Star rating inside the popup */}
+
+                          {/* Star rating input inside the popup */}
                           <div className="star-rating">
                             <h3>Your Rating:</h3>
                             <StarRatingComponent
@@ -264,7 +318,7 @@ function Course_2() {
             </div>
 
             <div className="chart-container">
-              <h2>User Ratings vs {career} Importance</h2>
+              <h2>User Grades vs {career} Predicted Grade</h2>
               {generateCombinedChartData() && (
                 <Line
                   data={generateCombinedChartData()}
@@ -272,11 +326,24 @@ function Course_2() {
                     scales: {
                       y: {
                         beginAtZero: true,
-                        max: 10
+                        max: 4
                       }
                     }
                   }}
                 />
+              )}
+            </div>
+
+            {/* Display current average and predicted grade required */}
+            <div className="grade-info">
+              <h2>Grade Information</h2>
+              <p>Current Average Grade: {calculateCurrentAverage()}</p>
+              {isPossibleToAchieveRequirement() && calculatePredictedGrade() !== null ? (
+                <p>To meet the requirement of {careerRequirement} average, you need a grade of <strong>{Math.min(calculatePredictedGrade(), 4)}</strong> in remaining subjects.</p>
+              ) : calculatePredictedGrade() === null ? (
+                <p>You have entered grades for all subjects.</p>
+              ) : (
+                <p style={{ color: 'red' }}>It is impossible to meet the required average of {careerRequirement} based on your current grades. Please consider retaking some subjects to improve your grades.</p>
               )}
             </div>
           </div>

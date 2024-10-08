@@ -24,6 +24,13 @@ app.add_middleware(
 # Replace 'YOUR_YOUTUBE_API_KEY' with your actual YouTube Data API key
 YOUTUBE_API_KEY = 'AIzaSyB6beEGYhSRxAdB6IXc_K1Jr5W4fRm1j3A'
 
+
+@app.on_event("startup")
+async def startup_event():
+    print("Initializing curriculum...")
+    await initialize_curriculums()
+    print("Curriculum initialized successfully!")
+
 # Function to search YouTube using the API
 def youtube_search(query: str):
     youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
@@ -283,4 +290,6 @@ async def get_schedules(gmail: str):
         return schedules
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+    
+
 

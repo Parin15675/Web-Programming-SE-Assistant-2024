@@ -2,35 +2,46 @@ import React from 'react';
 import { GoogleLogout } from 'react-google-login';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { Button, Avatar, Typography, Container } from '@mui/material';
 import Nav from '../Nav';
+import './profile.css';
 
 const Profile = () => {
-  const profile = useSelector(state => state.profile);  // ดึงข้อมูลโปรไฟล์จาก Redux store
+  const profile = useSelector(state => state.profile);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const logOut = () => {
     dispatch({
-      type: 'LOGOUT'  // เมื่อกดล้อกเอาท์จะลบข้อมูลโปรไฟล์
+      type: 'LOGOUT'
     });
-    navigate('/login');  // หลังจากล้อกเอาท์ให้ไปที่หน้า login
+    navigate('/login');
   };
 
   return (
-    <div className="profile">
-    <Nav></Nav>
-      {profile ? (
-        <div>
-          <h1>Profile</h1>
-          <img src={profile.imageUrl} alt={profile.name} />
-          <p>Name: {profile.name}</p>
-          <p>Email: {profile.email}</p>
-          <GoogleLogout clientId="YOUR_GOOGLE_CLIENT_ID" buttonText="Log out" onLogoutSuccess={logOut} />
-        </div>
-      ) : (
-        <p>No user logged in</p>
-      )}
-    </div>
+    <>
+      <Nav />
+      <Container maxWidth="sm" style={{ textAlign: 'center', marginTop: '50px' }}>
+        {profile ? (
+          <div>
+            <Typography variant="h3" gutterBottom>Profile</Typography>
+            <Avatar src={profile.imageUrl} alt={profile.name} sx={{ width: 150, height: 150, margin: '20px auto' }} />
+            <Typography variant="h5">Name: {profile.name}</Typography>
+            <Typography variant="h6">Email: {profile.email}</Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              sx={{ marginTop: 3 }}
+              onClick={logOut}
+            >
+              Log out
+            </Button>
+          </div>
+        ) : (
+          <Typography variant="h6">No user logged in</Typography>
+        )}
+      </Container>
+    </>
   );
 }
 

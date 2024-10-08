@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
 import { GoogleLogin, GoogleLogout } from 'react-google-login';
 import { gapi } from 'gapi-script';
-import { useDispatch, useSelector } from 'react-redux';  
+import { useDispatch, useSelector } from 'react-redux';
 import Nav from '../Nav';
+import { Container, Card, CardContent, Typography, Button, Avatar } from '@mui/material'; // Material UI components
+import './Login.css'; // Import CSS for additional styling
 
 const Login = () => {
     const clientId = "989892277796-hr8ep4fu8ecrjn84gadef7655fpoucvb.apps.googleusercontent.com";
@@ -12,10 +14,8 @@ const Login = () => {
     // Check if user is already logged in using localStorage
     useEffect(() => {
         const storedProfile = localStorage.getItem('profile'); // Get profile from localStorage
-        console.log("Stored profile from localStorage:", storedProfile); // Debug: Check stored profile
         if (storedProfile) {
             const parsedProfile = JSON.parse(storedProfile);
-            console.log("Parsed profile:", parsedProfile); // Debug: Check parsed profile
             dispatch({
                 type: 'SET_PROFILE',
                 payload: parsedProfile // Set profile to Redux
@@ -32,17 +32,15 @@ const Login = () => {
     }, [dispatch]);
 
     const onSuccess = (res) => {
-        console.log('Login success response:', res); // Debug: Check login response
         dispatch({
             type: 'SET_PROFILE',
             payload: res.profileObj
         });
         localStorage.setItem('profile', JSON.stringify(res.profileObj)); // Store profile in localStorage
-        console.log('Profile saved in localStorage:', res.profileObj); // Debug: Confirm saving profile
     };
 
     const onFailure = (res) => {
-        console.log('Login failure response:', res); // Debug: Check failure response
+        console.log('Login failure:', res); // Debug: Check failure response
     };
 
     const logOut = () => {
@@ -50,33 +48,78 @@ const Login = () => {
             type: 'LOGOUT'
         });
         localStorage.removeItem('profile'); // Remove profile from localStorage when logged out
-        console.log('Profile removed from localStorage'); // Debug: Confirm profile removal
+    };
+
+    const handleImageError = (e) => {
+        e.target.src = 'default-image-path.jpg'; // Replace this with your actual default image path
     };
 
     return (
         <div>
-            <Nav></Nav>
-            <h2>React Google Login</h2>
-            <br />
-            {profile ? (
-                <>
-                    <img src={profile.imageUrl} alt="user image" onError={(e) => e.target.src = 'default-image-path.jpg'} />
-                    <h3>User Logged In</h3>
-                    <p>Name: {profile.name}</p>
-                    <p>Email: {profile.email}</p>
-                    <br />
-                    <GoogleLogout clientId={clientId} buttonText='Log out' onLogoutSuccess={logOut} />
-                </>
-            ) : (
-                <GoogleLogin
-                    clientId={clientId}
-                    buttonText="Sign in with Google"
-                    onSuccess={onSuccess}
-                    onFailure={onFailure}
-                    cookiePolicy={'single_host_origin'}
-                    isSignedIn={true}
-                />
-            )}
+            <Nav /> {/* Navigation bar */}
+            <Container className="login-container" maxWidth="sm">
+                <Card className="login-card" raised>
+                    <CardContent>
+                        <Typography variant="h4" gutterBottom align="center">
+                            React Google Login
+                        </Typography>
+
+                        {profile ? (
+                            <>
+                                <div className="profile-section">
+                                    <Avatar
+                                        src={profile.imageUrl}
+                                        alt="user image"
+                                        onError={handleImageError}
+                                        sx={{ width: 100, height: 100 }}
+                                        className="profile-avatar"
+                                    />
+                                    <Typography variant="h6" align="center">User Logged In</Typography>
+                                    <Typography variant="body1" align="center">Name: {profile.name}</Typography>
+                                    <Typography variant="body1" align="center">Email: {profile.email}</Typography>
+                                    <br />
+                                    <GoogleLogout
+                                        clientId={clientId}
+                                        buttonText='Log out'
+                                        onLogoutSuccess={logOut}
+                                        render={renderProps => (
+                                            <Button
+                                                variant="contained"
+                                                color="secondary"
+                                                onClick={renderProps.onClick}
+                                                disabled={renderProps.disabled}
+                                                fullWidth
+                                            >
+                                                Log out
+                                            </Button>
+                                        )}
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            <GoogleLogin
+                                clientId={clientId}
+                                buttonText="Sign in with Google"
+                                onSuccess={onSuccess}
+                                onFailure={onFailure}
+                                cookiePolicy={'single_host_origin'}
+                                isSignedIn={true}
+                                render={renderProps => (
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        onClick={renderProps.onClick}
+                                        disabled={renderProps.disabled}
+                                        fullWidth
+                                    >
+                                        Sign in with Google
+                                    </Button>
+                                )}
+                            />
+                        )}
+                    </CardContent>
+                </Card>
+            </Container>
         </div>
     );
 }
