@@ -288,6 +288,17 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
         setDetails("");
         setColor("#e81416"); // Reset to default color
     };
+
+    const onVideoModalClose = () => {
+        setIsVideoModalOpen(false);
+        // Reset video-related state if necessary, or keep the values to carry into the normal modal
+        setIsModalOpen(false);
+        setStartTime(null);
+        setEndTime(null);
+        setTitle("");
+        setDetails("");
+        setColor("#e81416"); // Reset to default color
+    };
     
 
     return (
@@ -471,7 +482,7 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
             {isVideoModalOpen && (
                 <VideoShowcaseModal
                     isOpen={isVideoModalOpen}
-                    onClose={() => setIsVideoModalOpen(false)}  // Close the video modal
+                    onClose={onVideoModalClose} // Close the video modal
                     youtubeVideoId={youtubeVideoId}
                     onEdit={() => {
                         setIsVideoModalOpen(false);  // Close the video modal

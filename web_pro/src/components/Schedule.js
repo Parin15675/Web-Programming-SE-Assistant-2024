@@ -7,8 +7,8 @@ const schedule = () => {
   return (
     <div class="banner">
       <Nav></Nav>
-      <YoutubeSearch/>
       <Calendar/>
+      <YoutubeSearch/>
     </div>
   )
 }
