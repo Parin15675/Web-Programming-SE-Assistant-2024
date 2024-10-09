@@ -148,5 +148,3 @@ async def get_user_schedules(gmail: str):
         return user.get("schedules", {})
     else:
         raise HTTPException(status_code=404, detail="User not found")
-
-

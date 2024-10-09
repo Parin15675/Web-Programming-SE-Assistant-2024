@@ -30,33 +30,35 @@ const YoutubeSearch = () => {
     }, [profile]);
 
     return (
+        
         <div>
             <Nav />
-            <h1>Videos for Your Career Interest</h1>
-            {isLoading ? (
-                <p>Loading...</p>
-            ) : (
-                <div className="video-container">
-                    {videos.length > 0 ? (
-                        videos.map((video, index) => (
-                            <div key={index} className="video">
-                                <iframe
-                                    src={`https://www.youtube.com/embed/${video.id.videoId}`}
-                                    frameBorder="0"
-                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                    allowFullScreen
-                                    title={video.snippet.title}
-                                ></iframe>
-                                <p>{video.snippet.title}</p>
-                            </div>
-                        ))
-                    ) : (
-                        <p>No results found</p>
-                    )}
-                </div>
-
-            )}
-            <News/>
+            <div className="content-wrapper">
+                <h1>Videos for Your Career Interest</h1>
+                {isLoading ? (
+                    <div className="loading-spinner"></div> // Loading spinner
+                ) : (
+                    <div className="video-container">
+                        {videos.length > 0 ? (
+                            videos.map((video, index) => (
+                                <div key={index} className="video-card">
+                                    <iframe
+                                        src={`https://www.youtube.com/embed/${video.id.videoId}`}
+                                        frameBorder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                        title={video.snippet.title}
+                                    ></iframe>
+                                    <p>{video.snippet.title}</p>
+                                </div>
+                            ))
+                        ) : (
+                            <p>No results found</p>
+                        )}
+                    </div>
+                )}
+            </div>
+            <News />
         </div>
     );
 };

@@ -51,7 +51,7 @@ function Course_2() {
   // Predefined career requirements (letter grade)
   useEffect(() => {
     const careerRequirements = {
-      "Data Analysis": "A",
+      "Data Analysis": "B+",
       "Software Engineer": "B",
       "Web Development": "B",
       "Other": "C"
@@ -95,11 +95,11 @@ function Course_2() {
   // Convert star ratings to numeric grades (1-4 scale)
   const starRatingToNumericGrade = (stars) => {
     if (stars === 10) return 4.0; // A
-    if (stars === 9) return 3.7;
+    if (stars === 9) return 3.5;
     if (stars === 8) return 3.0; // B
-    if (stars === 7) return 2.7;
+    if (stars === 7) return 2.5;
     if (stars === 6) return 2.0; // C
-    if (stars === 5) return 1.7;
+    if (stars === 5) return 1.5;
     if (stars === 4) return 1.0; // D
     return 0; // F for anything 3 stars or below
   };
@@ -119,28 +119,30 @@ function Course_2() {
     }
   };
 
-  // Calculate predicted grade only if not all subjects are rated
   const calculatePredictedGrade = () => {
     const requiredAverageNumeric = letterGradeToNumeric(careerRequirement);
     let enteredGrades = 0, enteredTotal = 0;
-
+  
     curriculum.subjects.forEach((subject) => {
       const stars = ratings[subject.name];
       const numericGrade = starRatingToNumericGrade(stars);
-      if (numericGrade) {
+      
+      // Ensure that 0 is considered a valid grade, but exclude null/undefined
+      if (numericGrade !== null && numericGrade !== undefined) {
         enteredGrades += 1;
         enteredTotal += numericGrade;
       }
     });
-
+  
     const remainingSubjects = curriculum.subjects.length - enteredGrades;
     if (remainingSubjects === 0) {
       return null; // No prediction needed if all ratings are provided
     }
-
+  
     const predictedGrade = (requiredAverageNumeric * curriculum.subjects.length - enteredTotal) / remainingSubjects;
     return predictedGrade;
   };
+  
 
   // Check if achieving the required average is possible
   const isPossibleToAchieveRequirement = () => {
@@ -148,23 +150,34 @@ function Course_2() {
     return predictedGrade === null || predictedGrade <= 4.0; // It's impossible if the predicted grade exceeds the maximum of 4.0
   };
 
-  // Calculate the current average based on numeric grades from star ratings
   const calculateCurrentAverage = () => {
     let enteredTotal = 0, enteredGrades = 0;
-
+  
     curriculum.subjects.forEach((subject) => {
       const stars = ratings[subject.name];
       const numericGrade = starRatingToNumericGrade(stars);
-      if (numericGrade) {
+  
+      // Include 0 but exclude undefined or null values
+      if (numericGrade !== null && numericGrade !== undefined) {
         enteredGrades += 1;
         enteredTotal += numericGrade;
       }
     });
-
+  
     return enteredGrades ? (enteredTotal / enteredGrades).toFixed(2) : 0;
   };
-
   
+
+  // Function to check if the user has entered all ratings and if the average meets the requirement
+  const hasPassedRequirement = () => {
+    const requiredAverageNumeric = letterGradeToNumeric(careerRequirement);
+    const currentAverage = parseFloat(calculateCurrentAverage());
+
+    if (calculatePredictedGrade() === null && currentAverage >= requiredAverageNumeric) {
+      return true; // User has passed
+    }
+    return false; // User has not passed
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -341,7 +354,11 @@ function Course_2() {
               {isPossibleToAchieveRequirement() && calculatePredictedGrade() !== null ? (
                 <p>To meet the requirement of {careerRequirement} average, you need a grade of <strong>{Math.min(calculatePredictedGrade(), 4)}</strong> in remaining subjects.</p>
               ) : calculatePredictedGrade() === null ? (
-                <p>You have entered grades for all subjects.</p>
+                hasPassedRequirement() ? (
+                  <p style={{ color: 'green' }}>Congratulations! You have met the requirement of {careerRequirement} average.</p>
+                ) : (
+                  <p style={{ color: 'red' }}>You have entered all grades, but unfortunately, you did not meet the required average of {careerRequirement}. Consider improving your grades in future courses.</p>
+                )
               ) : (
                 <p style={{ color: 'red' }}>It is impossible to meet the required average of {careerRequirement} based on your current grades. Please consider retaking some subjects to improve your grades.</p>
               )}
