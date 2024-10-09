@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import Nav from '../Nav';
-import { useSelector } from 'react-redux';
-import StarRatingComponent from 'react-star-rating-component';
-import { Line } from 'react-chartjs-2'; // We will use Line chart for both datasets
-import 'chart.js/auto'; // Import Chart.js
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import Nav from "../Nav";
+import { useSelector } from "react-redux";
+import StarRatingComponent from "react-star-rating-component";
+import { Line } from "react-chartjs-2";
+import "chart.js/auto"; 
 import "./Course_2.css";
 
 function Course_2() {
@@ -15,15 +15,18 @@ function Course_2() {
   const [showPopup, setShowPopup] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [ratings, setRatings] = useState({});
-  const [career, setCareer] = useState(''); // Hold the career from backend
-  const [careerRequirement, setCareerRequirement] = useState('B'); // Default letter grade requirement for the career
+  const [career, setCareer] = useState(""); 
+  const [careerRequirement, setCareerRequirement] = useState("B");
 
-  const profile = useSelector(state => state.profile);
+  const profile = useSelector((state) => state.profile);
 
   useEffect(() => {
     if (profile && profile.email) {
-      axios.get(`http://localhost:8000/api/user/${encodeURIComponent(profile.email)}`)
-        .then(res => {
+      axios
+        .get(
+          `http://localhost:8000/api/user/${encodeURIComponent(profile.email)}`
+        )
+        .then((res) => {
           setCurriculum(res.data.curriculum);
           setYear(res.data.user.year);
           setCareer(res.data.user.career || "No career selected");
@@ -32,14 +35,15 @@ function Course_2() {
           if (res.data.user && res.data.user.ratings) {
             const updatedRatings = {};
             res.data.curriculum.subjects.forEach((subject) => {
-              updatedRatings[subject.name] = res.data.user.ratings[subject.name] || 0;
+              updatedRatings[subject.name] =
+                res.data.user.ratings[subject.name] || null;
             });
             setRatings(updatedRatings);
           }
           setIsLoading(false);
         })
-        .catch(err => {
-          console.error('Error fetching user data:', err);
+        .catch((err) => {
+          console.error("Error fetching user data:", err);
           setIsReturningUser(false);
           setIsLoading(false);
         });
@@ -48,13 +52,12 @@ function Course_2() {
     }
   }, [profile]);
 
-  // Predefined career requirements (letter grade)
   useEffect(() => {
     const careerRequirements = {
       "Data Analysis": "B+",
       "Software Engineer": "B",
       "Web Development": "B",
-      "Other": "C"
+      Other: "C",
     };
 
     setCareerRequirement(careerRequirements[career] || "C");
@@ -77,23 +80,34 @@ function Course_2() {
 
   const onStarClick = (nextValue, prevValue, index) => {
     const subjectName = curriculum.subjects[index].name;
-    setRatings({ ...ratings, [subjectName]: nextValue });
-
-    axios.post('http://localhost:8000/api/user/rating', {
-      gmail: profile.email,
-      subject: subjectName,
-      rating: nextValue,
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).catch(err => {
-      console.error('Error:', err);
-    });
+    
+    // If resetting, set the rating to -1 to indicate "not rated"
+    const ratingValue = nextValue === null ? -1 : nextValue;
+  
+    setRatings({ ...ratings, [subjectName]: ratingValue });
+  
+    axios
+      .post(
+        "http://localhost:8000/api/user/rating",
+        {
+          gmail: profile.email,
+          subject: subjectName,
+          rating: ratingValue, // Send -1 when resetting
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          }
+        }
+      )
+      .catch((err) => {
+        console.error("Error:", err);
+      });
   };
+  
 
-  // Convert star ratings to numeric grades (1-4 scale)
   const starRatingToNumericGrade = (stars) => {
+    if (stars === null) return null; // Not rated yet
     if (stars === 10) return 4.0; // A
     if (stars === 9) return 3.5;
     if (stars === 8) return 3.0; // B
@@ -101,82 +115,91 @@ function Course_2() {
     if (stars === 6) return 2.0; // C
     if (stars === 5) return 1.5;
     if (stars === 4) return 1.0; // D
-    return 0; // F for anything 3 stars or below
+    return 0.0; // 1, 2, or 3 stars (Fail)
   };
 
-  // Convert letter grade requirement to numeric value for comparison and calculations
   const letterGradeToNumeric = (grade) => {
     switch (grade) {
-      case 'A': return 4.0;
-      case 'B+': return 3.5;
-      case 'B': return 3.0;
-      case 'C+': return 2.5;
-      case 'C': return 2.0;
-      case 'D+': return 1.5;
-      case 'D': return 1.0;
-      case 'F': return 0.0;
-      default: return 0.0;
+      case "A":
+        return 4.0;
+      case "B+":
+        return 3.5;
+      case "B":
+        return 3.0;
+      case "C+":
+        return 2.5;
+      case "C":
+        return 2.0;
+      case "D+":
+        return 1.5;
+      case "D":
+        return 1.0;
+      case "F":
+        return 0.0;
+      default:
+        return 0.0;
     }
   };
 
   const calculatePredictedGrade = () => {
     const requiredAverageNumeric = letterGradeToNumeric(careerRequirement);
-    let enteredGrades = 0, enteredTotal = 0;
-  
+    let enteredGrades = 0,
+      enteredTotal = 0;
+
     curriculum.subjects.forEach((subject) => {
       const stars = ratings[subject.name];
       const numericGrade = starRatingToNumericGrade(stars);
-      
-      // Ensure that 0 is considered a valid grade, but exclude null/undefined
-      if (numericGrade !== null && numericGrade !== undefined) {
+
+      if (stars>0) {
         enteredGrades += 1;
         enteredTotal += numericGrade;
       }
     });
-  
+
     const remainingSubjects = curriculum.subjects.length - enteredGrades;
     if (remainingSubjects === 0) {
-      return null; // No prediction needed if all ratings are provided
+      return null;
     }
-  
-    const predictedGrade = (requiredAverageNumeric * curriculum.subjects.length - enteredTotal) / remainingSubjects;
-    return predictedGrade;
-  };
-  
 
-  // Check if achieving the required average is possible
+    const predictedGrade =
+      (requiredAverageNumeric * curriculum.subjects.length - enteredTotal) /
+      remainingSubjects;
+    return Math.min(predictedGrade, 4); 
+  };
+
   const isPossibleToAchieveRequirement = () => {
     const predictedGrade = calculatePredictedGrade();
-    return predictedGrade === null || predictedGrade <= 4.0; // It's impossible if the predicted grade exceeds the maximum of 4.0
+    return predictedGrade === null || predictedGrade <= 4.0;
   };
 
   const calculateCurrentAverage = () => {
-    let enteredTotal = 0, enteredGrades = 0;
-  
+    let enteredTotal = 0,
+      enteredGrades = 0;
+
     curriculum.subjects.forEach((subject) => {
       const stars = ratings[subject.name];
       const numericGrade = starRatingToNumericGrade(stars);
-  
-      // Include 0 but exclude undefined or null values
-      if (numericGrade !== null && numericGrade !== undefined) {
+
+      if (stars !== null && stars !== undefined) {
         enteredGrades += 1;
         enteredTotal += numericGrade;
       }
     });
-  
+
     return enteredGrades ? (enteredTotal / enteredGrades).toFixed(2) : 0;
   };
-  
 
-  // Function to check if the user has entered all ratings and if the average meets the requirement
   const hasPassedRequirement = () => {
     const requiredAverageNumeric = letterGradeToNumeric(careerRequirement);
     const currentAverage = parseFloat(calculateCurrentAverage());
 
-    if (calculatePredictedGrade() === null && currentAverage >= requiredAverageNumeric) {
-      return true; // User has passed
+    if (
+      calculatePredictedGrade() === null &&
+      currentAverage >= requiredAverageNumeric
+    ) {
+      return true;
     }
-    return false; // User has not passed
+    return false;
   };
 
   const handleSubmit = (e) => {
@@ -194,45 +217,51 @@ function Course_2() {
       career,
     };
 
-    axios.post('http://localhost:8000/api/user/', userData)
-      .then(res => {
+    axios
+      .post("http://localhost:8000/api/user/", userData)
+      .then((res) => {
         setCurriculum(res.data.curriculum);
         setIsReturningUser(true);
       })
-      .catch(err => {
-        console.error('Error:', err);
+      .catch((err) => {
+        console.error("Error:", err);
       });
   };
 
-  // Generate data for the Line Chart (combined graph)
   const generateCombinedChartData = () => {
     if (!curriculum || !careerRequirement) return null;
 
-    const labels = curriculum.subjects.map(subject => subject.name);
-    const userGradesData = labels.map(subjectName => starRatingToNumericGrade(ratings[subjectName]) || 0); // User's grades
+    const labels = curriculum.subjects.map((subject) => subject.name);
+    const userGradesData = labels.map(
+      (subjectName) => starRatingToNumericGrade(ratings[subjectName]) || 0
+    );
     const predictedGrade = calculatePredictedGrade();
-    const predictedGradesData = labels.map(subjectName => starRatingToNumericGrade(ratings[subjectName]) || (predictedGrade ? Math.min(predictedGrade, 4) : 0)); // Predicted grade for missing subjects (capped at 4)
+    const predictedGradesData = labels.map(
+      (subjectName) =>
+        starRatingToNumericGrade(ratings[subjectName]) ||
+        (predictedGrade ? Math.min(predictedGrade, 4) : 0)
+    );
 
     return {
       labels,
       datasets: [
         {
-          label: 'User Grades',
+          label: "User Grades",
           fill: false,
           lineTension: 0.1,
-          backgroundColor: 'rgba(75,192,192,0.4)',
-          borderColor: 'rgba(75,192,192,1)',
-          data: userGradesData
+          backgroundColor: "rgba(75,192,192,0.4)",
+          borderColor: "rgba(75,192,192,1)",
+          data: userGradesData,
         },
         {
           label: `${career} Predicted Grade`,
           fill: false,
           lineTension: 0.1,
-          backgroundColor: 'rgba(153,102,255,0.4)',
-          borderColor: 'rgba(153,102,255,1)',
-          data: predictedGradesData
-        }
-      ]
+          backgroundColor: "rgba(153,102,255,0.4)",
+          borderColor: "rgba(153,102,255,1)",
+          data: predictedGradesData,
+        },
+      ],
     };
   };
 
@@ -253,14 +282,17 @@ function Course_2() {
             </label>
 
             {isReturningUser ? (
-              <>
-                <p>Year: {year}, Career Interest: {career}</p>
-              </>
+              <p>
+                Year: {year}, Career Interest: {career}
+              </p>
             ) : (
               <>
                 <label>
                   Select Year:
-                  <select value={year} onChange={(e) => setYear(Number(e.target.value))}>
+                  <select
+                    value={year}
+                    onChange={(e) => setYear(Number(e.target.value))}
+                  >
                     <option value={1}>Year 1</option>
                     <option value={2}>Year 2</option>
                     <option value={3}>Year 3</option>
@@ -270,7 +302,10 @@ function Course_2() {
 
                 <label>
                   Select Career Interest:
-                  <select value={career} onChange={(e) => setCareer(e.target.value)}>
+                  <select
+                    value={career}
+                    onChange={(e) => setCareer(e.target.value)}
+                  >
                     <option value="">Select a Career</option>
                     <option value="Data Analysis">Data Analysis</option>
                     <option value="Software Engineer">Software Engineer</option>
@@ -279,9 +314,7 @@ function Course_2() {
                   </select>
                 </label>
 
-                <button onClick={handleSubmit}>
-                  Submit
-                </button>
+                <button onClick={handleSubmit}>Submit</button>
               </>
             )}
           </>
@@ -292,41 +325,50 @@ function Course_2() {
             <div className="subject-list">
               <h2>Curriculum for Year {curriculum.year}</h2>
               <div className="subject-container">
-                {curriculum.subjects && curriculum.subjects.map((subject, index) => (
-                  <div key={index} className="subject-wrapper">
-                    <div
-                      className="subject-box"
-                      onClick={() => handleSubjectClick(subject)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <h3>{subject.name}</h3>
-                    </div>
-
-                    {/* Popup for subject details and star rating input */}
-                    {showPopup && selectedSubject === subject && (
-                      <div className="popup">
-                        <div className="popup-content">
-                          <h3>Subject Details</h3>
-                          <p>Subject: {subject.name}</p>
-                          <p>Description: {subject.description}</p>
-
-                          {/* Star rating input inside the popup */}
-                          <div className="star-rating">
-                            <h3>Your Rating:</h3>
-                            <StarRatingComponent
-                              name={subject.name}
-                              starCount={10}
-                              value={ratings[subject.name] || 0}
-                              onStarClick={(nextValue, prevValue) => onStarClick(nextValue, prevValue, index)}
-                            />
-                          </div>
-
-                          <button onClick={handleClosePopup}>Close</button>
-                        </div>
+                {curriculum.subjects &&
+                  curriculum.subjects.map((subject, index) => (
+                    <div key={index} className="subject-wrapper">
+                      <div
+                        className="subject-box"
+                        onClick={() => handleSubjectClick(subject)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <h3>{subject.name}</h3>
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {showPopup && selectedSubject === subject && (
+                        <div className="popup">
+                          <div className="popup-content">
+                            <h3>Subject Details</h3>
+                            <p>Subject: {subject.name}</p>
+                            <p>Description: {subject.description}</p>
+
+                            <div className="star-rating">
+                              <h3>Your Rating:</h3>
+                              <StarRatingComponent
+                                name={subject.name}
+                                starCount={10}
+                                value={ratings[subject.name] || 0} 
+                                onStarClick={(nextValue, prevValue) =>
+                                  onStarClick(nextValue, prevValue, index)
+                                }
+                              />
+                            </div>
+
+                            <button
+                              onClick={() =>
+                                onStarClick(null, ratings[subject.name], index)
+                              }
+                            >
+                              Reset Rating to "Not Rated"
+                            </button>
+
+                            <button onClick={handleClosePopup}>Close</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
               </div>
             </div>
 
@@ -339,28 +381,42 @@ function Course_2() {
                     scales: {
                       y: {
                         beginAtZero: true,
-                        max: 4
-                      }
-                    }
+                        max: 4,
+                      },
+                    },
                   }}
                 />
               )}
             </div>
 
-            {/* Display current average and predicted grade required */}
             <div className="grade-info">
               <h2>Grade Information</h2>
               <p>Current Average Grade: {calculateCurrentAverage()}</p>
-              {isPossibleToAchieveRequirement() && calculatePredictedGrade() !== null ? (
-                <p>To meet the requirement of {careerRequirement} average, you need a grade of <strong>{Math.min(calculatePredictedGrade(), 4)}</strong> in remaining subjects.</p>
+              {isPossibleToAchieveRequirement() &&
+              calculatePredictedGrade() !== null ? (
+                <p>
+                  To meet the requirement of {careerRequirement} average, you
+                  need a grade of{" "}
+                  <strong>{Math.min(calculatePredictedGrade(), 4)}</strong> in
+                  remaining subjects.
+                </p>
               ) : calculatePredictedGrade() === null ? (
                 hasPassedRequirement() ? (
-                  <p style={{ color: 'green' }}>Congratulations! You have met the requirement of {careerRequirement} average.</p>
+                  <p style={{ color: "green" }}>
+                    Congratulations! You have met the requirement of{" "}
+                    {careerRequirement} average.
+                  </p>
                 ) : (
-                  <p style={{ color: 'red' }}>You have entered all grades, but unfortunately, you did not meet the required average of {careerRequirement}. Consider improving your grades in future courses.</p>
+                  <p style={{ color: "red" }}>
+                    You have entered all grades, but unfortunately, you did not
+                    meet the required average of {careerRequirement}.
+                  </p>
                 )
               ) : (
-                <p style={{ color: 'red' }}>It is impossible to meet the required average of {careerRequirement} based on your current grades. Please consider retaking some subjects to improve your grades.</p>
+                <p style={{ color: "red" }}>
+                  It is impossible to meet the required average of{" "}
+                  {careerRequirement} based on your current grades.
+                </p>
               )}
             </div>
           </div>

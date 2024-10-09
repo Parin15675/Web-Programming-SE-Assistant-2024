@@ -241,18 +241,26 @@ class RatingRequest(BaseModel):
 
 @app.post("/api/user/rating")
 async def rate_subject(request: RatingRequest):
-    if request.rating < 1 or request.rating > 10:
-        raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
+    # Allow rating to be between 1 and 10, or -1 for reset
+    if (request.rating < 1 or request.rating > 10) and request.rating != -1:
+        raise HTTPException(status_code=400, detail="Rating must be between 1 and 10, or -1 to reset")
     
-    # ค้นหาและอัปเดตผู้ใช้ในฐานข้อมูล
+    # Find the user in the database
     user = await users_collection.find_one({"gmail": request.gmail})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    # Initialize ratings if not present
     if "ratings" not in user:
         user["ratings"] = {}
-    user["ratings"][request.subject] = request.rating
 
+    # Handle reset case (-1 sets the rating to null)
+    if request.rating == -1:
+        user["ratings"][request.subject] = None  # or you can use `del user["ratings"][request.subject]` to remove it entirely
+    else:
+        user["ratings"][request.subject] = request.rating
+
+    # Update the user's ratings in the database
     await users_collection.update_one(
         {"_id": user["_id"]},
         {"$set": {"ratings": user["ratings"]}}
