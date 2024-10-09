@@ -56,7 +56,8 @@ async def initialize_curriculums():
             {"year": 1, "subjects": [
                 {"name": "Math 101", "description": "Basic mathematics covering algebra, calculus, and geometry."},
                 {"name": "Physics 101", "description": "Introduction to physics with a focus on mechanics and motion."},
-                {"name": "Programming 101", "description": "Fundamental programming concepts using Python."}
+                {"name": "Programming 101", "description": "Fundamental programming concepts using Python."},
+                {"name": "Rust", "description": "Fundamental programming concepts using Rust."},
             ]},
             {"year": 2, "subjects": [
                 {"name": "Data Structures", "description": "Study of linear and non-linear data structures such as stacks, queues, and trees."},

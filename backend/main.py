@@ -2,7 +2,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from model import User
-from database import create_user, fetch_curriculum_by_year, initialize_curriculums, get_user_by_name, user_helper, users_collection, upload_pdf, get_pdf, fetch_books,save_user_schedules, get_user_schedules
+from database import create_user, fetch_curriculum_by_year, initialize_curriculums, get_user_by_name, user_helper, users_collection, upload_pdf, get_pdf, fetch_books,save_user_schedules, get_user_schedules,curriculum_collection
 import io  # Added for handling byte streams
 from googleapiclient.discovery import build
 from typing import List, Dict
@@ -25,11 +25,11 @@ app.add_middleware(
 YOUTUBE_API_KEY = 'AIzaSyB6beEGYhSRxAdB6IXc_K1Jr5W4fRm1j3A'
 
 
-@app.on_event("startup")
-async def startup_event():
-    print("Initializing curriculum...")
-    await initialize_curriculums()
-    print("Curriculum initialized successfully!")
+# @app.on_event("startup")
+# async def startup_event():
+#     print("Initializing curriculum...")
+#     await initialize_curriculums()
+#     print("Curriculum initialized successfully!")
 
 # Function to search YouTube using the API
 def youtube_search(query: str):
@@ -121,6 +121,7 @@ async def startup_event():
 @app.post("/api/user/")
 async def create_user_and_get_curriculum(user: User):
     user_data = await create_user(user)  # Save user to MongoDB
+    await initialize_curriculums()
     curriculum = await fetch_curriculum_by_year(user.year)  # Fetch curriculum for the selected year
     if curriculum:
         return {"user": user_data, "curriculum": curriculum}
@@ -131,15 +132,36 @@ async def create_user_and_get_curriculum(user: User):
 async def get_user_by_gmail(gmail: str):
     user = await users_collection.find_one({"gmail": gmail})
     if user:
-        curriculum = await fetch_curriculum_by_year(user['year'])
+        # Debug print to show the user's database ID
+        print(f"User ID from database: {user['_id']}")
+        
+        # Fetch curriculum for the user's year
+        curriculum = await curriculum_collection.find_one({"year": user['year']})
+        
+        if curriculum:
+            # Include the ObjectId as a string in the returned curriculum
+            curriculum_data = {
+                "_id": str(curriculum["_id"]),
+                "year": curriculum["year"],
+                "subjects": curriculum["subjects"]
+            }
+            
+            # Print the curriculum ID
+            print(f"Curriculum ID: {curriculum['_id']}")
+        else:
+            raise HTTPException(404, f"No curriculum found for year {user['year']}")
+
         user_data = user_helper(user)
 
         # If schedules are not set, initialize as an empty dictionary
         if not user_data.get("schedules"):
             user_data["schedules"] = {}
 
-        return {"user": user_data, "curriculum": curriculum}
+        return {"user": user_data, "curriculum": curriculum_data}
+    
     raise HTTPException(404, f"User {gmail} not found")
+
+
 
 
 # API for uploading PDFs to MongoDB
@@ -291,5 +313,32 @@ async def get_schedules(gmail: str):
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
     
+    
+@app.get("/get_schedules/{gmail}")
+async def get_schedules(gmail: str):
+    try:
+        # Fetch schedules from the database using the gmail
+        schedules = await get_user_schedules(gmail)
+        
+        if schedules:
+            return {"schedules": schedules}
+        else:
+            return {"message": "No schedules found"}
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    
+    
 
 
+
+# API to update an existing subject in the curriculum
+@app.put("/update_subject/{year}/{subject_name}")
+async def update_subject(year: int, subject_name: str, new_data: dict):
+    result = await curriculum_collection.update_one(
+        {"year": year, "subjects.name": subject_name},
+        {"$set": {"subjects.$.description": new_data["description"]}}  # Update description
+    )
+    if result.modified_count == 1:
+        return {"message": "Subject updated successfully"}
+    else:
+        raise HTTPException(status_code=404, detail="Subject not found")
