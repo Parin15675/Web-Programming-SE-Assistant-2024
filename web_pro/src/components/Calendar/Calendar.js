@@ -5,10 +5,10 @@ import { useSelector } from 'react-redux';
 
 // Helper function to reset the time of a Date object to midnight
 const resetTimeToMidnight = (date) => {
-    const newDate = new Date(date);
-    newDate.setHours(0, 0, 0, 0); // Set time to 00:00:00
+    const newDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())); // Reset to midnight UTC
     return newDate;
 };
+
 
 
 const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = null , videoId = null}) => {
@@ -63,6 +63,8 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
     const formatDate = (date) => {
         return date.toISOString().split('T')[0];
     };
+
+    
 
     // Helper function to get the week for the current date
     const getCurrentWeek = (currentDate) => {
@@ -148,7 +150,7 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
     
 
     const handleSaveSchedule = () => {
-        const dayKey = formatDate(selectedSlot?.day || currentDate);
+        const dayKey = formatDate(resetTimeToMidnight(selectedSlot?.day || currentDate)); // Ensure UTC midnight date
         const newSchedules = { ...schedules };
     
         const startMinute = startTime?.minute || 0;
@@ -169,6 +171,7 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
         }
     
         setSchedules(newSchedules);
+        console.log(dayKey); // This should now log the correct date
     
         // Save to backend
         axios.post('http://localhost:8000/save_schedules/', {
@@ -185,6 +188,7 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
         setIsModalOpen(false);
         resetForm();
     };
+    
     
 
     const handleDeleteSchedule = () => {
@@ -429,7 +433,7 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                                 {day.getDate()}
                                 <div className="calendar-day-events" >
                                     {/* Display all events for this day */}
-                                    {Object.values(getDaySchedules(day)).map((event, eventIndex) => (
+                                    {Object.values(getDaySchedules(resetTimeToMidnight(day))).map((event, eventIndex) => (
                                         <div
                                             key={eventIndex}
                                             className="calendar-day-event"
