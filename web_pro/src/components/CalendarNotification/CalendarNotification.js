@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux'; // Import useSelector to access Redux store
 import axios from 'axios';
+import './CalendarNotification.css'; // Import the CSS file for styling
 
 const CalendarNotification = () => {
     const [message, setMessage] = useState('');
     const [schedules, setSchedules] = useState([]);
-    
+
     // Get profile (including Gmail) from Redux  
     const profile = useSelector((state) => state.profile);
-    
+
     // Function to get today's date in the format 'YYYY-MM-DD'
     const getCurrentDate = () => {
         const today = new Date();
@@ -49,7 +50,7 @@ const CalendarNotification = () => {
     }, [profile]);
 
     return (
-        <div>
+        <div className="calendar-notification-box">
             {message ? (
                 <div>
                     <h1>{message}</h1>
