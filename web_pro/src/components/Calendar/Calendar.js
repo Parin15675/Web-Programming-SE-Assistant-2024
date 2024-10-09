@@ -192,33 +192,40 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
     
 
     const handleDeleteSchedule = () => {
-        const dayKey = formatDate(selectedSlot.day);
-        const newSchedules = { ...schedules };
-
-        const startMinute = startTime.minute;
-        const endMinute = endTime.minute;
-
-        // Remove the schedule from the selected minutes
-        for (let i = startMinute; i <= endMinute; i++) {
-            if (newSchedules[dayKey]) {
-                delete newSchedules[dayKey][i];
+        axios.delete(`http://localhost:8000/delete_schedule/`, {
+            params: {
+                gmail: profile.email,
+                day: formatDate(selectedSlot.day), // Ensure proper date formatting
+                start_minute: startTime.minute // Ensure the minute is sent correctly
             }
-        }
-
-        // If the day has no more events, delete the day entry
-        if (Object.keys(newSchedules[dayKey]).length === 0) {
-            delete newSchedules[dayKey];
-        }
-
-        setSchedules(newSchedules);
-        localStorage.setItem('calendarSchedules', JSON.stringify(newSchedules)); // Update local storage
-        setIsModalOpen(false);
-        setStartTime(null);
-        setEndTime(null);
-        setTitle("");
-        setDetails("");
-        setColor("#e81416"); // Reset to default color
+        })
+        .then(response => {
+            console.log("Schedule deleted:", response.data);
+    
+            // Remove the schedule from frontend UI as well
+            const dayKey = formatDate(selectedSlot.day);
+            const newSchedules = { ...schedules };
+            delete newSchedules[dayKey][startTime.minute];
+    
+            if (Object.keys(newSchedules[dayKey]).length === 0) {
+                delete newSchedules[dayKey];
+            }
+    
+            setSchedules(newSchedules); // Update the state after deletion
+            
+            // Close the modal
+            setIsModalOpen(false);
+    
+            // Reload the page to update the calendar
+            window.location.reload(); // This will refresh the page to fetch the latest schedules
+        })
+        .catch(error => {
+            console.error("Error deleting schedule:", error);
+        });
     };
+    
+    
+    
 
     const clearAllSchedules = () => {
         localStorage.removeItem('calendarSchedules'); // Remove from localStorage

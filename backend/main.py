@@ -9,6 +9,8 @@ from typing import List, Dict
 import random  # Added to randomize career search terms
 import requests
 from pydantic import BaseModel, EmailStr
+from bson import ObjectId
+
 
 app = FastAPI()
 
@@ -290,6 +292,48 @@ async def get_schedules(gmail: str):
         return schedules
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+@app.delete("/delete_schedule/")
+async def delete_schedule(gmail: str, day: str, start_minute: int):
+    try:
+        # Fetch user by email
+        user = await users_collection.find_one({"gmail": gmail})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Check if the day exists in the user's schedule
+        if day in user["schedules"]:
+            # Loop through all the events of the day and find the event with the matching start minute
+            schedule_found = False
+            for minute, event in user["schedules"][day].items():
+                if event["startMinute"] == start_minute:
+                    # Delete all the minutes between startMinute and endMinute
+                    for minute_to_delete in range(event["startMinute"], event["endMinute"] + 1):
+                        user["schedules"][day].pop(str(minute_to_delete), None)
+                    
+                    # If no more schedules exist for that day, delete the day entry
+                    if not user["schedules"][day]:
+                        del user["schedules"][day]
+                    
+                    # Mark that the schedule was found and break the loop
+                    schedule_found = True
+                    break
+
+            if not schedule_found:
+                raise HTTPException(status_code=404, detail="Schedule not found at the given time")
+            
+            # Update the user's schedule in the database
+            await users_collection.update_one(
+                {"_id": ObjectId(user["_id"])},
+                {"$set": {"schedules": user["schedules"]}}
+            )
+            return {"message": "Schedule deleted successfully"}
+        else:
+            raise HTTPException(status_code=404, detail="No schedules found for the given day")
     
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
+
+
 
 
