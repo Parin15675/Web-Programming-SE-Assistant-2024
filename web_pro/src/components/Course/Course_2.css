@@ -6,6 +6,8 @@
   margin-top: 20px;
 }
 
+
+
 .subject-box {
   background-color: #ff9f0e;
   border: 1px solid #ccc;
@@ -83,4 +85,5 @@
   .popup {
     width: 90%;  /* Adjust popup width for small screens */
   }
+
 }
