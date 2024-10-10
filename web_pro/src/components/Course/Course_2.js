@@ -6,6 +6,7 @@ import StarRatingComponent from 'react-star-rating-component';
 import { Line } from 'react-chartjs-2'; // We will use Line chart for both datasets
 import 'chart.js/auto'; // Import Chart.js
 import "./Course_2.css";
+import YoutubeSearch from '../Calendar/YoutubeSearch';
 
 function Course_2() {
   const [year, setYear] = useState(1);
@@ -322,6 +323,7 @@ function Course_2() {
                           </div>
 
                           <button onClick={handleClosePopup}>Close</button>
+                          <YoutubeSearch/>
                         </div>
                       </div>
                     )}
