@@ -103,27 +103,30 @@ body {
   transform: scale(1.05);
 }
 
-/* Academic progress container */
+/* Ensure the chart is properly sized and centered */
 .academic-progress {
   background-color: orange;
   padding: 20px;
   border-radius: 10px;
   box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
   margin-top: 20px;
-  max-width: 100%; /* Ensure it adapts to the full width of its parent */
-  max-height: 400px; /* Set a fixed height for the graph */
+  text-align: center;
+  max-width: 600px; /* Fix the max width */
+  max-height: 400px; /* Fix the max height */
   margin-left: auto;
   margin-right: auto;
-  display: flex;
-  justify-content: center; /* Center the graph horizontally */
-  align-items: center; /* Center the graph vertically */
+  width: 100%; /* Ensure it adapts responsively */
+  height: 400px; /* Set a fixed height */
 }
 
-/* Ensures the chart canvas takes up full space */
+/* Graph canvas styling */
 canvas {
-  width: 100% !important;
-  height: 100% !important;
+  width: 100% !important; /* Make sure the canvas takes the full width */
+  height: 100% !important; /* Make sure the canvas takes the full height */
 }
+
+
+
 
 .right-section {
   display: grid;
