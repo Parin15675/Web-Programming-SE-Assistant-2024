@@ -3,42 +3,37 @@ import './YoutubeSearch.css';
 import CalendarYoutubeModal from './CalendarYoutubeModal'; // Updated import to CalendarYoutubeModal
 
 const YoutubeSearch = () => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [videos, setVideos] = useState([]);
+    const [videos, setVideos] = useState([
+        {
+            id: { videoId: 'mockVideo1' },
+            snippet: {
+                title: 'Mock Lecture 1',
+            },
+            contentDetails: {
+                duration: 'PT1H20M', // Mock duration
+            }
+        },
+        {
+            id: { videoId: 'mockVideo2' },
+            snippet: {
+                title: 'Mock Lecture 2',
+            },
+            contentDetails: {
+                duration: 'PT55M', // Mock duration
+            }
+        },
+        {
+            id: { videoId: 'mockVideo3' },
+            snippet: {
+                title: 'Mock Lecture 3',
+            },
+            contentDetails: {
+                duration: 'PT45M', // Mock duration
+            }
+        }
+    ]); // Mock-up video data
     const [selectedVideo, setSelectedVideo] = useState(null); // To store the selected video
     const [isModalOpen, setIsModalOpen] = useState(false); // To control modal visibility
-
-    const handleSearch = async () => {
-        try {
-            // Step 1: Search videos (fetch videoId)
-            const searchResponse = await fetch(`http://localhost:8000/search?query=${searchTerm}`);
-            const searchData = await searchResponse.json();
-            console.log('Search API Response:', searchData);
-
-            // Extract video IDs from the search results
-            const videoIds = searchData.map(video => video.id.videoId).join(',');
-            console.log('Extracted Video IDs:', videoIds);
-
-            if (videoIds) {
-                // Step 2: Fetch video details (including contentDetails) from FastAPI
-                const detailsResponse = await fetch(`http://localhost:8000/videos?video_ids=${videoIds}`);
-                const detailsData = await detailsResponse.json();
-                console.log('Video Details API Response:', detailsData);
-
-                // Combine search results with video details
-                const availableVideos = searchData.map(video => {
-                    const details = detailsData.find(detail => detail.id === video.id.videoId);
-                    return { ...video, contentDetails: details ? details.contentDetails : null };
-                });
-
-                setVideos(availableVideos.filter(video => video.contentDetails)); // Only set videos with contentDetails
-            }
-        } catch (error) {
-            console.error('Error fetching YouTube data:', error);
-        }
-    };
-    
-    
 
     // Open the modal with the selected video
     const handleSelectVideo = (video) => {
@@ -48,18 +43,11 @@ const YoutubeSearch = () => {
 
     return (
         <div>
-            <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search YouTube"
-            />
-            <button onClick={handleSearch}>Search</button>
-
             <div className="video-container">
                 {videos.length > 0 ? (
                     videos.map((video) => (
                         <div key={video.id.videoId} className="video">
+                            {/* Mock iframe for video */}
                             <iframe
                                 src={`https://www.youtube.com/embed/${video.id.videoId}`}
                                 frameBorder="0"
