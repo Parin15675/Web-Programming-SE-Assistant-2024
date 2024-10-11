@@ -36,11 +36,13 @@
 
 .popup-content {
   text-align: left;
+  color: black;
 }
 
 .popup button {
   margin-top: 10px;
   display: block;
+  color: black;
 }
 
 /* Content container for layout */

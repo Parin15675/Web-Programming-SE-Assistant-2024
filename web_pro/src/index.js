@@ -43,6 +43,10 @@ const router = createBrowserRouter([
     path: "profile",
     element: <Profile />
   },
+  {
+    path:"/course/:subjectName",
+    element: <Course_2 />
+  },
 ]);
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

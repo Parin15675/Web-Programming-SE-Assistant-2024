@@ -1,4 +1,4 @@
-import './homestyle.css'; 
+import './Nav.css'; 
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import React, { useEffect } from 'react';
