@@ -7,9 +7,9 @@ const Video = () => {
   return (
     <div class="banner">
       <Nav></Nav>
+      <h1>Good Morning</h1>
       <CalendarNotification/>
       <Calendar/>
-      Home
     </div>
   )
 }
