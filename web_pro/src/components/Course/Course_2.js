@@ -33,7 +33,7 @@ function Course_2() {
           if (res.data.user && res.data.user.ratings) {
             const updatedRatings = {};
             res.data.curriculum.subjects.forEach((subject) => {
-              updatedRatings[subject.name] = res.data.user.ratings[subject.name] || 0;
+              updatedRatings[subject.name] = res.data.user.ratings[subject.name] ?? -1; // Default to -1 if not rated
             });
             setRatings(updatedRatings);
           }
@@ -93,7 +93,23 @@ function Course_2() {
     });
   };
 
-  // Convert star ratings to numeric grades (1-4 scale)
+  // Reset rating function
+  const handleResetRating = (subject, index) => {
+    setRatings({ ...ratings, [subject.name]: -1 }); // Set to -1 for "not rated"
+
+    axios.post('http://localhost:8000/api/user/rating', {
+      gmail: profile.email,
+      subject: subject.name,
+      rating: -1,
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).catch(err => {
+      console.error('Error:', err);
+    });
+  };
+
   const starRatingToNumericGrade = (stars) => {
     if (stars === 10) return 4.0; // A
     if (stars === 9) return 3.5;
@@ -105,7 +121,6 @@ function Course_2() {
     return 0; // F for anything 3 stars or below
   };
 
-  // Convert letter grade requirement to numeric value for comparison and calculations
   const letterGradeToNumeric = (grade) => {
     switch (grade) {
       case 'A': return 4.0;
@@ -123,53 +138,47 @@ function Course_2() {
   const calculatePredictedGrade = () => {
     const requiredAverageNumeric = letterGradeToNumeric(careerRequirement);
     let enteredGrades = 0, enteredTotal = 0;
-  
+
     curriculum.subjects.forEach((subject) => {
       const stars = ratings[subject.name];
       const numericGrade = starRatingToNumericGrade(stars);
       
-      // Ensure that 0 is considered a valid grade, but exclude null/undefined
-      if (numericGrade !== null && numericGrade !== undefined) {
+      if (numericGrade !== null && numericGrade !== undefined && stars !== -1) { // Exclude subjects with -1 rating
         enteredGrades += 1;
         enteredTotal += numericGrade;
       }
     });
-  
+
     const remainingSubjects = curriculum.subjects.length - enteredGrades;
     if (remainingSubjects === 0) {
       return null; // No prediction needed if all ratings are provided
     }
-  
+
     const predictedGrade = (requiredAverageNumeric * curriculum.subjects.length - enteredTotal) / remainingSubjects;
     return predictedGrade;
   };
-  
 
-  // Check if achieving the required average is possible
+  const calculateCurrentAverage = () => {
+    let enteredTotal = 0, enteredGrades = 0;
+
+    curriculum.subjects.forEach((subject) => {
+      const stars = ratings[subject.name];
+      const numericGrade = starRatingToNumericGrade(stars);
+
+      if (numericGrade !== null && numericGrade !== undefined && stars !== -1) { // Exclude -1 ratings
+        enteredGrades += 1;
+        enteredTotal += numericGrade;
+      }
+    });
+
+    return enteredGrades ? (enteredTotal / enteredGrades).toFixed(2) : 0;
+  };
+
   const isPossibleToAchieveRequirement = () => {
     const predictedGrade = calculatePredictedGrade();
     return predictedGrade === null || predictedGrade <= 4.0; // It's impossible if the predicted grade exceeds the maximum of 4.0
   };
 
-  const calculateCurrentAverage = () => {
-    let enteredTotal = 0, enteredGrades = 0;
-  
-    curriculum.subjects.forEach((subject) => {
-      const stars = ratings[subject.name];
-      const numericGrade = starRatingToNumericGrade(stars);
-  
-      // Include 0 but exclude undefined or null values
-      if (numericGrade !== null && numericGrade !== undefined) {
-        enteredGrades += 1;
-        enteredTotal += numericGrade;
-      }
-    });
-  
-    return enteredGrades ? (enteredTotal / enteredGrades).toFixed(2) : 0;
-  };
-  
-
-  // Function to check if the user has entered all ratings and if the average meets the requirement
   const hasPassedRequirement = () => {
     const requiredAverageNumeric = letterGradeToNumeric(careerRequirement);
     const currentAverage = parseFloat(calculateCurrentAverage());
@@ -205,14 +214,13 @@ function Course_2() {
       });
   };
 
-  // Generate data for the Line Chart (combined graph)
   const generateCombinedChartData = () => {
     if (!curriculum || !careerRequirement) return null;
 
     const labels = curriculum.subjects.map(subject => subject.name);
-    const userGradesData = labels.map(subjectName => starRatingToNumericGrade(ratings[subjectName]) || 0); // User's grades
+    const userGradesData = labels.map(subjectName => starRatingToNumericGrade(ratings[subjectName]) || 0);
     const predictedGrade = calculatePredictedGrade();
-    const predictedGradesData = labels.map(subjectName => starRatingToNumericGrade(ratings[subjectName]) || (predictedGrade ? Math.min(predictedGrade, 4) : 0)); // Predicted grade for missing subjects (capped at 4)
+    const predictedGradesData = labels.map(subjectName => starRatingToNumericGrade(ratings[subjectName]) || (predictedGrade ? Math.min(predictedGrade, 4) : 0));
 
     return {
       labels,
@@ -254,9 +262,7 @@ function Course_2() {
             </label>
 
             {isReturningUser ? (
-              <>
-                <p>Year: {year}, Career Interest: {career}</p>
-              </>
+              <p>Year: {year}, Career Interest: {career}</p>
             ) : (
               <>
                 <label>
@@ -303,7 +309,6 @@ function Course_2() {
                       <h3>{subject.name}</h3>
                     </div>
 
-                    {/* Popup for subject details and star rating input */}
                     {showPopup && selectedSubject === subject && (
                       <div className="popup">
                         <div className="popup-content">
@@ -311,19 +316,20 @@ function Course_2() {
                           <p>Subject: {subject.name}</p>
                           <p>Description: {subject.description}</p>
 
-                          {/* Star rating input inside the popup */}
                           <div className="star-rating">
                             <h3>Your Rating:</h3>
                             <StarRatingComponent
                               name={subject.name}
                               starCount={10}
-                              value={ratings[subject.name] || 0}
+                              value={ratings[subject.name] === -1 ? 0 : ratings[subject.name]} // Show 0 stars if rating is -1
+                              emptyStarColor={ratings[subject.name] === -1 ? '#ccc' : undefined} // Change color for "not rated"
                               onStarClick={(nextValue, prevValue) => onStarClick(nextValue, prevValue, index)}
                             />
                           </div>
 
+                          <button onClick={() => handleResetRating(subject, index)}>Reset Rating</button>
                           <button onClick={handleClosePopup}>Close</button>
-                          <YoutubeSearch/>
+                          <YoutubeSearch />
                         </div>
                       </div>
                     )}
@@ -349,7 +355,6 @@ function Course_2() {
               )}
             </div>
 
-            {/* Display current average and predicted grade required */}
             <div className="grade-info">
               <h2>Grade Information</h2>
               <p>Current Average Grade: {calculateCurrentAverage()}</p>
