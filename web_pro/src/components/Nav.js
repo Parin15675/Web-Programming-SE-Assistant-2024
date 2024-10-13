@@ -1,11 +1,13 @@
 import './Nav.css'; 
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
-import React, { useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
 
 const Nav = () => {
   const dispatch = useDispatch();
   const profile = useSelector(state => state.profile);
+  const [showNavbar, setShowNavbar] = useState(true); // State to control navbar visibility
+  const [lastScrollY, setLastScrollY] = useState(0);  // To track the last scroll position
 
   useEffect(() => {
       const storedProfile = localStorage.getItem('profile');
@@ -17,36 +19,57 @@ const Nav = () => {
       }
   }, [dispatch]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scroll down - hide navbar if scrolled more than 100px
+        setShowNavbar(false);
+      } else {
+        // Scroll up - show navbar
+        setShowNavbar(true);
+      }
+
+      setLastScrollY(currentScrollY); // Update lastScrollY with the current value
+    };
+
+    window.addEventListener('scroll', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll); // Clean up event listener on component unmount
+    };
+  }, [lastScrollY]);
+
   return (
-    <div className="banner">
-      <div className="navbar">
-        <img src="/se.png" className="logo" alt="Logo" />
-        <ul>
-          <li><Link to="/">Home</Link></li>
-          <li><Link to="/course">Course</Link></li>
-          <li><Link to="/schedule">Schedule</Link></li>
-          <li><Link to="/video">video</Link></li>
-          <li><Link to="/book">Book</Link></li>
-          
-          <li>
-            {profile ? (
-              // ถ้าล็อกอินแล้ว จะแสดงชื่อผู้ใช้และรูปภาพพร้อมลิงก์ไปยังโปรไฟล์
-              <Link to="/profile">
-                {profile.name} 
-                {/* <img 
-                  src={profile.imageUrl} 
-                  alt="user"
-                  onError={(e) => e.target.src = 'default-image-path.jpg'} 
-                  style={{ width: '30px', borderRadius: '50%', marginLeft: '10px' }}
-                /> */}
-              </Link>
-            ) : (
-              // ถ้ายังไม่ล็อกอิน จะแสดงลิงก์ไปยังหน้าล็อกอิน
-              <Link to="/login">You are not logged in</Link>
-            )}
-          </li>
-        </ul>
-      </div>
+    <div className={`navbar ${showNavbar ? '' : 'navbar-hidden'}`}>  {/* Add class based on scroll */}
+      <img src="/se.png" className="logo" alt="Logo" />
+      <ul>
+        <li>
+          <NavLink exact to="/" activeClassName="active">Home</NavLink>
+        </li>
+        <li>
+          <NavLink to="/course" activeClassName="active">Course</NavLink>
+        </li>
+        <li>
+          <NavLink to="/schedule" activeClassName="active">Schedule</NavLink>
+        </li>
+        <li>
+          <NavLink to="/video" activeClassName="active">Video</NavLink>
+        </li>
+        <li>
+          <NavLink to="/book" activeClassName="active">Book</NavLink>
+        </li>
+        <li>
+          {profile ? (
+            <NavLink to="/profile" activeClassName="active">
+              {profile.name}
+            </NavLink>
+          ) : (
+            <NavLink to="/login" activeClassName="active">You are not logged in</NavLink>
+          )}
+        </li>
+      </ul>
     </div>
   );
 }
