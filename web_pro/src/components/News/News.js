@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import "./News.css";
 import { useSelector } from "react-redux"; // Assuming you're using Redux for user profile
 
 const News = () => {
@@ -46,47 +45,49 @@ const News = () => {
   }, [career]);
 
   return (
-    <div className="news-section">
+    <div className="bg-slate-300 p-5">
       {/* Hero Section */}
-      <div className="news-hero">
-        <h2>Stay Updated with the Latest in {career}</h2>
-        <p>
-          Explore the most recent news articles that match your career
-          interests.
-        </p>
+      <div className="bg-slate-400 text-white text-center py-20 mb-10 ">
+        <h2 className="text-4xl font-bold mb-4">Stay Updated with the Latest in {career}</h2>
+        <p className="text-lg">Explore the most recent news articles that match your career interests.</p>
       </div>
 
       {/* News Articles */}
       {isLoading ? (
-        <div className="loading-spinner"></div> // Loading spinner
+        <div className="border-4 border-gray-200 border-t-4 border-t-blue-500 rounded-full w-10 h-10 mx-auto animate-spin"></div> // Loading spinner
       ) : (
-        <div className="news-container">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {news.length > 0 ? (
-    news.map((article, index) => (
-        <a 
-            key={index} 
-            className="news-article-link" 
-            href={article.url} 
-            target="_blank" 
-            rel="noopener noreferrer"
-        >
-            <div className="news-article">
-                <h3>{article.title}</h3>
-                <p>{article.description}</p>
-                {article.urlToImage && (
-                    <img 
-                        src={article.urlToImage} 
-                        alt={article.title} 
-                        onError={(e) => { e.target.onerror = null; e.target.style.display = 'none'; }} 
-                    />
-                )}
-            </div>
-        </a>
-    ))
-) : (
-    <p>No news articles found</p>
-)}
-
+            news.map((article, index) => (
+              <a
+                key={index}
+                className="block hover:transform hover:-translate-y-2 transition-transform duration-300"
+                href={article.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold mb-2">{article.title}</h3>
+                    <p className="text-gray-600">{article.description}</p>
+                    {article.urlToImage && (
+                      <img
+                        src={article.urlToImage}
+                        alt={article.title}
+                        className="mt-4 w-full h-48 object-cover rounded-md"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+              </a>
+            ))
+          ) : (
+            <p className="text-center text-gray-600">No news articles found</p>
+          )}
         </div>
       )}
     </div>

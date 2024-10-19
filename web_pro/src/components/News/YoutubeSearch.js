@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import './YoutubeSearch.css';
 import Nav from '../Nav';
 import axios from 'axios'; // Axios for making HTTP requests
 import { useSelector } from 'react-redux'; // Assuming you're using Redux for user profile
@@ -30,30 +29,30 @@ const YoutubeSearch = () => {
     }, [profile]);
 
     return (
-        
         <div>
             <Nav />
-            <div className="content-wrapper">
-                <h1>Videos for Your Career Interest</h1>
+            <div className="content-wrapper text-center py-10 pt-32 bg-slate-300">
+                <h1 className="text-4xl font-bold mb-10 text-gray-800">Videos for Your Career Interest</h1>
                 {isLoading ? (
-                    <div className="loading-spinner"></div> // Loading spinner
+                    <div className="loading-spinner mx-auto my-10 border-4 border-t-4 border-gray-300 rounded-full w-12 h-12 animate-spin border-t-blue-500"></div> // Loading spinner
                 ) : (
-                    <div className="video-container">
+                    <div className="video-container grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
                         {videos.length > 0 ? (
                             videos.map((video, index) => (
-                                <div key={index} className="video-card">
+                                <div key={index} className="video-card bg-white rounded-lg shadow-lg p-6 transition-transform transform hover:-translate-y-2 hover:shadow-xl">
                                     <iframe
                                         src={`https://www.youtube.com/embed/${video.id.videoId}`}
                                         frameBorder="0"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowFullScreen
                                         title={video.snippet.title}
+                                        className="w-full h-48 rounded-md"
                                     ></iframe>
-                                    <p>{video.snippet.title}</p>
+                                    <p className="text-lg font-medium text-gray-700 mt-4">{video.snippet.title}</p>
                                 </div>
                             ))
                         ) : (
-                            <p>No results found</p>
+                            <p className="text-gray-500">No results found</p>
                         )}
                     </div>
                 )}

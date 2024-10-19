@@ -4,16 +4,15 @@ import Nav from "./Nav";
 import CalendarNotification from "./CalendarNotification/CalendarNotification";
 import Calendar from "./Calendar/Calendar";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
-import Graph from "./Course/graph"; // Import the Graph component
-import "./homestyle.css";
+import { useNavigate } from "react-router-dom";
+import Graph from "./Course/graph";
 
 const Video = () => {
   const [curriculum, setCurriculum] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [ratings, setRatings] = useState({});
   const profile = useSelector((state) => state.profile);
-  const navigate = useNavigate(); // Use useNavigate for navigation
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (profile && profile.email) {
@@ -82,53 +81,54 @@ const Video = () => {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div className="text-center mt-8">Loading...</div>;
   }
 
   return (
-    <div className="banner">
-      <Nav />
-      {curriculum && (
-        <div className="content-layout">
-          <div className="left-section">
-            <h2>Your Course</h2>
-            <div className="subject-container2">
-              {curriculum.subjects.map((subject, index) => (
-                <div key={index} className="subject-wrapper">
-                  <div
-                    className="subject-box2"
-                    onClick={() => navigate(`/course/${encodeURIComponent(subject.name)}`)}
-                  >
-                    <h3>{subject.name}</h3>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="academic-progress">
-              <h3>Academic Progress</h3>
-              <Graph
-                curriculum={curriculum}
-                career={profile.career}
-                ratings={ratings}
-                careerRequirement="B"
-                calculatePredictedGrade={calculatePredictedGrade}
-                starRatingToNumericGrade={starRatingToNumericGrade}
-              />
-            </div>
+  <div className="min-h-screen bg-slate-300 pt-32">
+    <Nav />
+    {curriculum && (
+      <div className="container mx-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left Section: Subjects and Graph */}
+        <div className="space-y-6">
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">Your Course</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {curriculum.subjects.map((subject, index) => (
+              <div
+                key={index}
+                className="bg-white p-4 rounded-lg shadow-md hover:bg-gray-50 cursor-pointer transition-transform transform hover:scale-105 duration-300"
+                onClick={() => navigate(`/course/${encodeURIComponent(subject.name)}`)}
+              >
+                <h3 className="text-lg font-semibold text-gray-700 text-center">{subject.name}</h3>
+              </div>
+            ))}
           </div>
 
-          <div className="right-section">
-            <CalendarNotification />
-            {/* Calendar wrapped in a div to apply custom styles */}
-            <div className="calendar-container">
-              <Calendar />
-            </div>
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-xl font-semibold text-gray-700 mb-4">Academic Progress</h3>
+            <Graph
+              curriculum={curriculum}
+              career={profile.career}
+              ratings={ratings}
+              careerRequirement="B"
+              calculatePredictedGrade={calculatePredictedGrade}
+              starRatingToNumericGrade={starRatingToNumericGrade}
+            />
           </div>
         </div>
-      )}
-    </div>
-  );
+
+        {/* Right Section: Notifications and Calendar */}
+        <div className="space-y-6">
+          <CalendarNotification />
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <Calendar />
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+);
+
 };
 
 export default Video;
