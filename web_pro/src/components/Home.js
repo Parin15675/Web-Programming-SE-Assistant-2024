@@ -3,6 +3,7 @@ import axios from "axios";
 import Nav from "./Nav";
 import CalendarNotification from "./CalendarNotification/CalendarNotification";
 import Calendar from "./Calendar/Calendar";
+import StaticMonthCalendar from "./Calendar/StaticMonthCalendar";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Graph from "./Course/graph";
@@ -121,7 +122,7 @@ const Video = () => {
         <div className="space-y-6">
           <CalendarNotification />
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <Calendar />
+            <StaticMonthCalendar linkTo="/schedule" email={profile.email} />
           </div>
         </div>
       </div>
