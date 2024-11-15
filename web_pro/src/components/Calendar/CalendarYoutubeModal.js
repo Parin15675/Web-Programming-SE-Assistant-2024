@@ -22,6 +22,8 @@ const parseISO8601DurationToMinutes = (isoDuration) => {
 
 
 const CalendarYoutubeModal = ({ video, onClose }) => {
+    
+
     // Parse the video duration from ISO 8601 format to minutes
     const videoDuration = parseISO8601DurationToMinutes(video.contentDetails.duration);
 

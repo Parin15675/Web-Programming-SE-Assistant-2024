@@ -68,7 +68,6 @@ career_keywords = {
     # Add more career types with keywords here as needed
 }
 
-# Fetch videos based on career
 @app.get("/career_videos", response_model=List[dict])
 async def get_career_videos(gmail: str):
     user = await users_collection.find_one({"gmail": gmail})
@@ -85,7 +84,19 @@ async def get_career_videos(gmail: str):
     # Perform YouTube search
     videos = youtube_search(search_term)
 
+    # Extract video IDs and fetch content details
+    video_ids = [video['id']['videoId'] for video in videos]
+    video_details = youtube_videos(video_ids)
+
+    # Merge snippet and contentDetails
+    for video in videos:
+        for detail in video_details:
+            if video['id']['videoId'] == detail['id']:
+                video['contentDetails'] = detail.get('contentDetails', {})
+                break
+
     return videos
+
 
 # API to search YouTube based on user query
 @app.get("/search", response_model=List[dict])

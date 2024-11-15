@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from "react"; // React hooks
-import axios from "axios"; // Axios for API requests
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import "./Calendar.css";
-import { Link } from "react-router-dom"; // For navigation
+import { Link } from "react-router-dom";
 
-// Helper function to reset the time of a Date object to midnight
 const resetTimeToMidnight = (date) => {
     return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
 };
 
-// Helper function to get all days of the current month
 const getMonthDays = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -17,7 +15,7 @@ const getMonthDays = (date) => {
 
     const days = [];
     for (let i = 0; i < startOfMonth.getDay(); i++) {
-        days.push(null); // Fill in empty days at the start
+        days.push(null);
     }
 
     for (let day = 1; day <= endOfMonth.getDate(); day++) {
@@ -27,19 +25,17 @@ const getMonthDays = (date) => {
     return days;
 };
 
-// Helper function to format a date as YYYY-MM-DD
 const formatDate = (date) => {
     return date.toISOString().split("T")[0];
 };
 
 const StaticMonthCalendar = ({ linkTo = "/details", email }) => {
-    const currentDate = resetTimeToMidnight(new Date()); // Current date reset to midnight
-    const currentMonthDays = getMonthDays(currentDate); // Get all days in the current month
+    const currentDate = resetTimeToMidnight(new Date());
+    const currentMonthDays = getMonthDays(currentDate);
     const [events, setEvents] = useState({}); // State to store events
 
     useEffect(() => {
         if (email) {
-            // Fetch schedules for the user based on email
             axios
                 .get(`http://localhost:8000/get_schedules/${email}`)
                 .then((response) => {
@@ -54,14 +50,12 @@ const StaticMonthCalendar = ({ linkTo = "/details", email }) => {
     return (
         <Link to={linkTo} className="calendar-link">
             <div className="calendar">
-                {/* Month and Year Header */}
                 <div className="calendar-header-static">
                     <div className="month-tab">
                         {currentDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
                     </div>
                 </div>
 
-                {/* Weekday Headers */}
                 <div className="calendar-header-month">
                     {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, index) => (
                         <div key={index} className="calendar-header-day">
@@ -70,14 +64,12 @@ const StaticMonthCalendar = ({ linkTo = "/details", email }) => {
                     ))}
                 </div>
 
-                {/* Days of the Month */}
                 <div className="calendar-body-month">
                     {currentMonthDays.map((day, index) => (
                         <div key={index} className="calendar-day-month-static">
                             {day ? (
                                 <div className="calendar-day-number">
                                     {day.getDate()}
-                                    {/* Events for this day */}
                                     <div className="calendar-day-events">
                                         {events[formatDate(day)] &&
                                             Object.values(events[formatDate(day)]).map(

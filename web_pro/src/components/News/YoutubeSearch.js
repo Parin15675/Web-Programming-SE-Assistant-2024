@@ -3,11 +3,15 @@ import Nav from '../Nav';
 import axios from 'axios'; // Axios for making HTTP requests
 import { useSelector } from 'react-redux'; // Assuming you're using Redux for user profile
 import News from './News';
+import CalendarYoutubeModal from '../Calendar/CalendarYoutubeModal';
+import Calendar from '../Calendar/Calendar';
 
 const YoutubeSearch = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [videos, setVideos] = useState([]);
     const [isLoading, setIsLoading] = useState(true); // To handle loading state
+    const [selectedVideo, setSelectedVideo] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const profile = useSelector(state => state.profile); // Get the profile from Redux
 
     // Automatically fetch videos based on user's career interest
@@ -27,6 +31,11 @@ const YoutubeSearch = () => {
             setIsLoading(false); // Stop loading if no profile is available
         }
     }, [profile]);
+
+    const handleSelectVideo = (video) => {
+        setSelectedVideo(video);
+        setIsModalOpen(true);
+    };
 
     return (
         <div>
@@ -48,8 +57,9 @@ const YoutubeSearch = () => {
                                         title={video.snippet.title}
                                         className="w-full h-48 rounded-md"
                                     ></iframe>
-                                    <p className="text-lg font-medium text-gray-700 mt-4">{video.snippet.title}</p>
+                                    <button  className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"onClick={() => handleSelectVideo(video)}>Schedule This </button>
                                 </div>
+                                
                             ))
                         ) : (
                             <p className="text-gray-500">No results found</p>
@@ -58,6 +68,12 @@ const YoutubeSearch = () => {
                 )}
             </div>
             <News />
+            {isModalOpen && selectedVideo && (
+                <CalendarYoutubeModal 
+                    video={selectedVideo} 
+                    onClose={() => setIsModalOpen(false)} 
+                />
+            )}
         </div>
     );
 };

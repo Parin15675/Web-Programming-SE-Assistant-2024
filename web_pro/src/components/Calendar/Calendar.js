@@ -549,7 +549,7 @@ const Modal = ({ isOpen, onClose, title, setTitle, details, setDetails, color, s
     return (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h2>Schedule for {title || "Untitled"}</h2>
+
                 <input
                     type="text"
                     value={title}
