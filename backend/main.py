@@ -2,7 +2,7 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from model import User
-from database import create_user, fetch_curriculum_by_year, initialize_curriculums, get_user_by_name, user_helper, users_collection, upload_pdf, get_pdf, fetch_books,save_user_schedules, get_user_schedules
+from database import create_user, fetch_curriculum_by_year, initialize_curriculums, get_user_by_name, user_helper, users_collection, upload_pdf, get_pdf, fetch_books,save_user_schedules, get_user_schedules, holiday_collection
 import io  # Added for handling byte streams
 from googleapiclient.discovery import build
 from typing import List, Dict
@@ -17,21 +17,21 @@ app = FastAPI()
 # CORS Middleware to allow connections from the frontend (e.g., React app)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Adjust this to match your frontend domain/IP
+    allow_origins=["http://localhost:3000"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Replace 'YOUR_YOUTUBE_API_KEY' with your actual YouTube Data API key
-YOUTUBE_API_KEY = 'AIzaSyDZJJ0q2rPDqIgzkHFCdfT85iVZar2guI0'
+YOUTUBE_API_KEY = 'AIzaSyBn1odkfe_T977BRvfabz56qdIzd3VSeVw'
 
 
-@app.on_event("startup")
-async def startup_event():
-    print("Initializing curriculum...")
-    await initialize_curriculums()
-    print("Curriculum initialized successfully!")
+# @app.on_event("startup")
+# async def startup_event():
+#     print("Initializing curriculum...")
+#     await initialize_curriculums()
+#     print("Curriculum initialized successfully!")
 
 # Function to search YouTube using the API
 def youtube_search(query: str):
@@ -47,7 +47,7 @@ def youtube_search(query: str):
     available_videos = [
         item for item in response.get('items', []) if 'videoId' in item['id']
     ]
-    
+    print(f"Filtered videos: {available_videos}")  # Log filtered videos
     return available_videos
 
 def youtube_videos(video_ids: List[str]):
@@ -94,6 +94,7 @@ async def get_career_videos(gmail: str):
             if video['id']['videoId'] == detail['id']:
                 video['contentDetails'] = detail.get('contentDetails', {})
                 break
+    
 
     return videos
 
@@ -353,6 +354,23 @@ async def delete_schedule(gmail: str, day: str, start_minute: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
 
+@app.get("/api/public_holidays/")
+async def get_public_holidays():
+    """
+    Fetch a list of public holidays from the database.
+    """
+    try:
+        # Fetch holidays from the "holiday" collection
+        holidays_cursor = holiday_collection.find()  # Get all documents from the collection
+        holidays = await holidays_cursor.to_list(length=1000)  # Convert the cursor to a list with a max limit
+
+        # Transform ObjectId to string and return the result
+        for holiday in holidays:
+            holiday["_id"] = str(holiday["_id"])  # Convert ObjectId to string for JSON serialization
+
+        return {"holidays": holidays}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred while fetching holidays: {str(e)}")
 
 
 

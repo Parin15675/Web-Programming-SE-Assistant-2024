@@ -427,6 +427,23 @@ textarea {
     height: 100%;
 }
 
+.youtube-url-input {
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 16px;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.youtube-url-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+
+
 /* Make the calendar responsive */
 @media (max-width: 768px) {
     .calendar-controls {

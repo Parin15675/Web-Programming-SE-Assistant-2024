@@ -52,6 +52,7 @@ const News = () => {
         <p className="text-lg">Explore the most recent news articles that match your career interests.</p>
       </div>
 
+
       {/* News Articles */}
       {isLoading ? (
         <div className="border-4 border-gray-200 border-t-4 border-t-blue-500 rounded-full w-10 h-10 mx-auto animate-spin"></div> // Loading spinner

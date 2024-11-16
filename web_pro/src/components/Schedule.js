@@ -7,7 +7,7 @@ const schedule = () => {
   return (
     <div className="bg-slate-300 pt-32">
       <Nav></Nav>
-      <Calendar/>
+      <Calendar showAddVideoButton={true}/>
       <YoutubeSearch/>
     </div>
   )

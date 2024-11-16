@@ -13,6 +13,8 @@ users_collection = database.users
 curriculum_collection = database.curriculum
 fs = AsyncIOMotorGridFSBucket(database)  # Initialize GridFS for async file storage
 
+holiday_collection = database.holiday
+
 # Helper function สำหรับแปลง ObjectId ให้เป็น string
 def user_helper(user) -> dict:
     return {
@@ -129,7 +131,7 @@ async def save_user_schedules(gmail: str, schedules: dict):
                 "color": event.color,
                 "startMinute": event.startMinute,
                 "endMinute": event.endMinute,
-                "youtubeVideoId": event.youtubeVideoId
+                "youtubeVideoId": event.youtubeVideoId,
             }
             for minute, event in events.items()
         }
