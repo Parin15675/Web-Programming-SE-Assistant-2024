@@ -15,7 +15,7 @@
 /* Modal content box */
 .youtube-modal-content {
     background-color: white;
-    width: 90%;
+    width: 100%;
     max-width: 1000px; /* Increased max width for the modal */
     padding: 20px;
     border-radius: 10px;
@@ -36,8 +36,9 @@
 }
 
 .top-section .video-display {
-    width: 100%; /* Full width of the container */
-    max-height: 300px; /* Limit height for the video */
+    width: 80%; /* Full width of the container */
+    max-height: 800px; /* Limit height for the video */
+    min-height: 350px;
     border-radius: 8px;
     margin-bottom: 10px;
     object-fit: cover; /* Maintain aspect ratio */
@@ -60,7 +61,7 @@
 /* Bottom section: Calendar container */
 .bottom-section {
     flex-grow: 1; /* Allow the calendar to take up available space */
-    max-height: 500px; /* Limit height for the calendar */
+    max-height: 400px; /* Limit height for the calendar */
     overflow-y: auto; /* Add scroll if calendar content overflows */
     padding: 10px;
     border-top: 1px solid #ddd; /* Divider between video and calendar */
@@ -72,7 +73,6 @@
 
 .calendar-container {
     width: 100%; /* Ensure the calendar takes the full width */
-    max-width: 800px; /* Limit the maximum width */
 }
 
 /* Button styles */
@@ -90,4 +90,20 @@ button {
 
 button:hover {
     background-color: #0056b3;
+}
+
+.bottom-section .calendar {
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    gap: 10px;
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
 }

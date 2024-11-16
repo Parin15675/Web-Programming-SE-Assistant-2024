@@ -69,7 +69,7 @@ const CalendarYoutubeModal = ({ video, onClose }) => {
                             className="video-display"
                             style={{
                                 maxWidth: '300px', // Set a maximum width
-                                height: 'auto', // Maintain aspect ratio
+                                height: '100%', // Maintain aspect ratio
                                 margin: '10px auto', // Center the video
                                 display: 'block',
                             }}
