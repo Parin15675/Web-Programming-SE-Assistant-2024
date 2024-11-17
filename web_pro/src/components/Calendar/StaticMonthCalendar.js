@@ -33,8 +33,10 @@ const StaticMonthCalendar = ({ linkTo = "/details", email }) => {
     const currentDate = resetTimeToMidnight(new Date());
     const currentMonthDays = getMonthDays(currentDate);
     const [events, setEvents] = useState({}); // State to store events
+    const [holidays, setHolidays] = useState([]); // State to store holidays
 
     useEffect(() => {
+        // Fetch user events
         if (email) {
             axios
                 .get(`http://localhost:8000/get_schedules/${email}`)
@@ -45,7 +47,22 @@ const StaticMonthCalendar = ({ linkTo = "/details", email }) => {
                     console.error("Error fetching events:", error);
                 });
         }
+
+        // Fetch public holidays
+        axios
+            .get("http://localhost:8000/api/public_holidays/")
+            .then((response) => {
+                setHolidays(response.data.holidays || []);
+            })
+            .catch((error) => {
+                console.error("Error fetching public holidays:", error);
+            });
     }, [email]);
+
+    const isPublicHoliday = (date) => {
+        const formattedDate = formatDate(date);
+        return holidays.find((holiday) => holiday.date === formattedDate);
+    };
 
     return (
         <Link to={linkTo} className="calendar-link">
@@ -65,37 +82,76 @@ const StaticMonthCalendar = ({ linkTo = "/details", email }) => {
                 </div>
 
                 <div className="calendar-body-month">
-                    {currentMonthDays.map((day, index) => (
-                        <div key={index} className="calendar-day-month-static">
-                            {day ? (
-                                <div className="calendar-day-number">
-                                    {day.getDate()}
-                                    <div className="calendar-day-events">
-                                        {events[formatDate(day)] &&
-                                            Object.values(events[formatDate(day)]).map(
-                                                (event, eventIndex) => (
-                                                    <div
-                                                        key={eventIndex}
-                                                        className="calendar-event"
-                                                        style={{
-                                                            backgroundColor: event.color,
-                                                            fontSize: "6px",
-                                                            margin: "1px 0",
-                                                            padding: "1px",
-                                                            borderRadius: "3px",
-                                                        }}
-                                                    >
-                                                        {event.title}
-                                                    </div>
-                                                )
-                                            )}
+                    {currentMonthDays.map((day, index) => {
+                        // Keep track of displayed event titles
+                        const displayedEvents = new Set();
+
+                        // Check for public holidays
+                        const holiday = day ? isPublicHoliday(resetTimeToMidnight(day)) : null;
+
+                        return (
+                            <div key={index} className="calendar-day-month-static">
+                                {day ? (
+                                    <div
+                                        className={`calendar-day-number ${
+                                            holiday ? "calendar-day-holiday" : ""
+                                        }`}
+                                        style={{
+                                            cursor: "pointer",
+                                            color: holiday ? "#ff9800" : "black",
+                                            backgroundColor: holiday ? "#ffe0b2" : "transparent",
+                                        }}
+                                    >
+                                        {day.getDate()}
+                                        
+                                        {/* Display Holiday */}
+                                        {holiday && (
+                                            <div
+                                                style={{
+                                                    maxHeight: "5px",
+                                                    backgroundColor: "#ff9800",
+                                                    borderRadius: "3px",
+                                                    fontSize: "2px",
+                                                }}
+                                            >
+                                            </div>
+                                        )}
+
+                                        {/* Display Events */}
+                                        <div className="calendar-day-events">
+                                            {events[formatDate(resetTimeToMidnight(day))] &&
+                                                Object.values(events[formatDate(resetTimeToMidnight(day))])
+                                                    .filter((event) => {
+                                                        // Only display unique events
+                                                        if (displayedEvents.has(event.title)) {
+                                                            return false;
+                                                        }
+                                                        displayedEvents.add(event.title);
+                                                        return true;
+                                                    })
+                                                    .map((event, eventIndex) => (
+                                                        <div
+                                                            key={eventIndex}
+                                                            className="calendar-event"
+                                                            style={{
+                                                                backgroundColor: event.color,
+                                                                fontSize: "6px",
+                                                                margin: "1px 0",
+                                                                padding: "1px",
+                                                                borderRadius: "3px",
+                                                            }}
+                                                        >
+                                                            {event.title}
+                                                        </div>
+                                                    ))}
+                                        </div>
                                     </div>
-                                </div>
-                            ) : (
-                                ""
-                            )}
-                        </div>
-                    ))}
+                                ) : (
+                                    ""
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </Link>
