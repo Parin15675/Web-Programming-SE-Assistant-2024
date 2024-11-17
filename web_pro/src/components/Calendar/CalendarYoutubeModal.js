@@ -36,6 +36,9 @@ const parseISO8601DurationToMinutes = (isoDuration) => {
 const CalendarYoutubeModal = ({ video, onClose }) => {
     // Parse the duration safely
     const videoDuration = parseISO8601DurationToMinutes(video.contentDetails.duration);
+    
+    console.log(video); // Ensure `id.file` exists
+
 
     const handleSave = (startTime) => {
         const endTime = startTime + videoDuration;

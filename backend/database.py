@@ -103,6 +103,8 @@ async def get_pdf(pdf_id):
     file_data = await fs.open_download_stream(ObjectId(pdf_id))
     return await file_data.read()
 
+
+
 async def fetch_books():
     files_cursor = fs.find()  # This returns an async cursor
     files = await files_cursor.to_list(length=100)  # Fetch up to 100 files
@@ -121,17 +123,18 @@ async def save_user_schedules(gmail: str, schedules: dict):
     user = await users_collection.find_one({"gmail": gmail})
     if not user:
         raise Exception("User not found")
-    
-    # Convert Schedule objects to dictionaries
-    schedules_with_str_keys = {
+
+    # Convert events to the appropriate format for MongoDB storage
+    formatted_schedules = {
         date: {
             str(minute): {
-                "title": event.title,
-                "details": event.details,
-                "color": event.color,
-                "startMinute": event.startMinute,
-                "endMinute": event.endMinute,
-                "youtubeVideoId": event.youtubeVideoId,
+                "title": event["title"],
+                "details": event["details"],
+                "color": event["color"],
+                "startMinute": event["startMinute"],
+                "endMinute": event["endMinute"],
+                "youtubeVideoId": event.get("youtubeVideoId"),
+                "videoFile": event.get("videoFile"),  # Handle file ID for videos
             }
             for minute, event in events.items()
         }
@@ -140,8 +143,10 @@ async def save_user_schedules(gmail: str, schedules: dict):
 
     await users_collection.update_one(
         {"gmail": gmail},
-        {"$set": {"schedules": schedules_with_str_keys}}
+        {"$set": {"schedules": formatted_schedules}}
     )
+
+
 
 # Function to fetch user schedules from MongoDB
 async def get_user_schedules(gmail: str):
@@ -150,3 +155,5 @@ async def get_user_schedules(gmail: str):
         return user.get("schedules", {})
     else:
         raise HTTPException(status_code=404, detail="User not found")
+
+

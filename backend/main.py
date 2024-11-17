@@ -1,8 +1,8 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from model import User
-from database import create_user, fetch_curriculum_by_year, initialize_curriculums, get_user_by_name, user_helper, users_collection, upload_pdf, get_pdf, fetch_books,save_user_schedules, get_user_schedules, holiday_collection
+from database import  fs,create_user, fetch_curriculum_by_year, initialize_curriculums, get_user_by_name, user_helper, users_collection, upload_pdf, get_pdf, fetch_books,save_user_schedules, get_user_schedules, holiday_collection
 import io  # Added for handling byte streams
 from googleapiclient.discovery import build
 from typing import List, Dict
@@ -10,6 +10,7 @@ import random  # Added to randomize career search terms
 import requests
 from pydantic import BaseModel, EmailStr
 from bson import ObjectId
+import json
 
 
 app = FastAPI()
@@ -24,7 +25,7 @@ app.add_middleware(
 )
 
 # Replace 'YOUR_YOUTUBE_API_KEY' with your actual YouTube Data API key
-YOUTUBE_API_KEY = 'AIzaSyBn1odkfe_T977BRvfabz56qdIzd3VSeVw'
+YOUTUBE_API_KEY = 'AIzaSyDZJJ0q2rPDqIgzkHFCdfT85iVZar2guI0'
 
 
 # @app.on_event("startup")
@@ -175,6 +176,25 @@ async def download_book(pdf_id: str):
     
     return StreamingResponse(io.BytesIO(file_data), media_type="application/pdf")
 
+# API for downloading MP4 from MongoDB
+@app.get("/videos/{file_id}")
+async def download_mp4(file_id: str):
+    try:
+        # Retrieve file data from GridFS
+        file_data = await get_pdf(file_id)  # Reuse the same helper function to fetch the file
+        if not file_data:
+            raise HTTPException(status_code=404, detail="MP4 file not found")
+        
+        # Return the MP4 file as a StreamingResponse
+        return StreamingResponse(
+            io.BytesIO(file_data),
+            media_type="video/mp4",
+            headers={"Content-Disposition": f"inline; filename={file_id}.mp4"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+
 # API for listing available books (PDFs)
 @app.get("/api/books/")
 async def list_books():
@@ -297,12 +317,33 @@ class ScheduleRequest(BaseModel):
 
 # API to save user schedules
 @app.post("/save_schedules/")
-async def save_schedules(data: ScheduleRequest):
+async def save_schedules(
+    gmail: str = Form(...),
+    schedules: str = Form(...),
+    videoFile: UploadFile = File(None)
+):
     try:
-        result = await save_user_schedules(data.gmail, data.schedules)
-        return result
-    except HTTPException as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
+        # Parse schedules from JSON
+        schedules_data = json.loads(schedules)
+
+        # Save the file to GridFS if provided
+        file_id = None
+        if videoFile:
+            file_data = await videoFile.read()
+            file_id = await upload_pdf(file_data, videoFile.filename)
+
+        # Update schedules to include file ID if applicable
+        if file_id:
+            for day, events in schedules_data.items():
+                for minute, event in events.items():
+                    event["videoFile"] = str(file_id)
+
+        # Save schedules to MongoDB
+        await save_user_schedules(gmail, schedules_data)
+
+        return {"message": "Schedules saved successfully!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 # API to fetch user schedules
 @app.get("/get_schedules/{gmail}")

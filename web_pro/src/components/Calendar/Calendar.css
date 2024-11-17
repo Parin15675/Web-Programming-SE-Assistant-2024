@@ -337,7 +337,9 @@
     display: flex;
     width: 100%;
     margin-top: 5%;
+    justify-content: space-between;
 }
+
 
 .video-display {
     width: 90%;
@@ -440,6 +442,12 @@ textarea {
 .youtube-url-input:focus {
     border-color: #007bff;
     box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.LoadingVideo {
+    align-items: center;
+    border: 1px black solid;
+    margin-right: 10%;
 }
 
 
