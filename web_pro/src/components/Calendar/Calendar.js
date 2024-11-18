@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './Calendar.css';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
+import CalendarYoutubeModal from './CalendarYoutubeModal';
 
 // Helper function to reset the time of a Date object to midnight
 const resetTimeToMidnight = (date) => {
@@ -9,9 +10,10 @@ const resetTimeToMidnight = (date) => {
     return newDate;
 };
 
+const YoutubeAPIkey = "AIzaSyDZJJ0q2rPDqIgzkHFCdfT85iVZar2guI0"
 
 
-const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = null , videoId = null}) => {
+const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = null , videoId = null , videoFile = null, showAddVideoButton = false }) => {
 
     const profile = useSelector(state => state.profile);
 
@@ -27,7 +29,15 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
     const [endTime, setEndTime] = useState(null);
     const [youtubeVideoId, setYoutubeVideoId] = useState(videoId || null);
     const [isVideoModalOpen, setIsVideoModalOpen] = useState(false); // State for the video modal
+    const [isUrlModalOpen, setIsUrlModalOpen] = useState(false); // To control URL input modal
+    const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false); // To control scheduling modal
+    const [youtubeUrl, setYoutubeUrl] = useState(""); // To store YouTube URL input
+    const [isMp4ModalOpen, setIsMp4ModalOpen] = useState(false); // To upload MP4 file
+    const [mp4File, setMp4File] = useState(videoFile || null); // Store MP4 file
+    const [selectedVideo, setSelectedVideo] = useState(null); // To store video details
+    const [isVideoTypeModalOpen, setIsVideoTypeModalOpen] = useState(false); // To open the modal with two options
 
+    
 
     // Auto-calculate endTime if videoDuration is provided
     useEffect(() => {
@@ -101,12 +111,16 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
     const currentMonth = getMonthDays(currentDate);
     const currentWeek = getCurrentWeek(currentDate);
 
+    
+
     // Handle when a time slot is clicked
     const handleSlotClick = (minute, day) => {
         const dayKey = formatDate(day);
-        const event = schedules[dayKey]?.[minute]; 
+        const event = schedules[dayKey]?.[minute];
+    
 
-        if(event){
+
+        if (event) {
             setTitle(event.title);
             setDetails(event.details);
             setColor(event.color);
@@ -114,11 +128,16 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
             setEndTime({ minute: event.endMinute });
             setSelectedSlot({ startMinute: event.startMinute, endMinute: event.endMinute, day });
             setYoutubeVideoId(event.youtubeVideoId || null);
-            
+            setMp4File(event.videoFile || null);
+
+            console.log("videoFile:", event.videoFile); 
+
             if (event.youtubeVideoId) {
-                setIsVideoModalOpen(true);  // Open video modal if there is a YouTube video
-            } else {
-                setIsModalOpen(true);  // Open the normal modal directly if there's no video
+                setMp4File(null);
+                setIsVideoModalOpen(true); // Open YouTube video modal
+            }
+            else {
+                setIsModalOpen(true); // Open normal modal
             }
         }
         else{
@@ -133,9 +152,12 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                 setSelectedSlot({ startMinute: minute, endMinute: calculatedEndTime, day });
                 setColor('#e81416');
                 setYoutubeVideoId(videoId);
+                setMp4File(mp4File);
+                console.log("mp4 uploaded to modal")
                 setIsModalOpen(true);
-
-            } else if (!endTime) {
+            }
+            
+            else if (!endTime) {
                 // For non-video scheduling
                 const nextHourMinute = Math.ceil(minute / 60) * 60; // Round to the next hour
                 setEndTime({ minute: nextHourMinute });
@@ -145,12 +167,12 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                 setIsModalOpen(true);
             }
         }
-        
+
     };
-    
+
 
     const handleSaveSchedule = () => {
-        const dayKey = formatDate(resetTimeToMidnight(selectedSlot?.day || currentDate)); // Ensure UTC midnight date
+        const dayKey = formatDate(resetTimeToMidnight(selectedSlot?.day || currentDate));
         const newSchedules = { ...schedules };
     
         const startMinute = startTime?.minute || 0;
@@ -161,33 +183,38 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                 newSchedules[dayKey] = {};
             }
             newSchedules[dayKey][i] = {
-                title: title,
+                title,
                 details,
                 color,
                 startMinute,
                 endMinute,
-                youtubeVideoId,
+                youtubeVideoId: youtubeVideoId || null, // Handle YouTube video ID
+                videoFile: mp4File || null, // Handle MP4 file reference
             };
         }
     
         setSchedules(newSchedules);
-        console.log(dayKey); // This should now log the correct date
     
+        // Prepare FormData for backend
+        const formData = new FormData();
+        formData.append("gmail", profile.email);
+        formData.append("schedules", JSON.stringify(newSchedules)); // Serialize schedules to JSON
+        if (mp4File) {
+            formData.append("videoFile", mp4File); // Append the actual MP4 file
+        }
+
         // Save to backend
-        axios.post('http://localhost:8000/save_schedules/', {
-            gmail: profile.email,
-            schedules: newSchedules
-        })
-        .then(response => {
-            console.log("Schedules saved successfully!");
-        })
-        .catch(error => {
-            console.error("Error saving schedules:", error);
-        });
-    
+        axios
+            .post("http://localhost:8000/save_schedules/", formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            })
+            .then(() => console.log("Schedules saved successfully!"))
+            .catch((error) => console.error("Error saving schedules:", error));
+            
         setIsModalOpen(false);
         resetForm();
     };
+
     
     
 
@@ -215,6 +242,7 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
             
             // Close the modal
             setIsModalOpen(false);
+            setMp4File(null);
     
             // Reload the page to update the calendar
             window.location.reload(); // This will refresh the page to fetch the latest schedules
@@ -286,6 +314,7 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
         setColor("#e81416"); // Reset color
         setStartTime(null); // Reset start time
         setEndTime(null);   // Reset end time
+        setMp4File(null);
     };
     
 
@@ -298,6 +327,7 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
         setTitle("");
         setDetails("");
         setColor("#e81416"); // Reset to default color
+        setMp4File(null);
     };
 
     const onVideoModalClose = () => {
@@ -310,7 +340,139 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
         setDetails("");
         setColor("#e81416"); // Reset to default color
     };
+
+    // Function to extract video ID from the YouTube URL
+    const extractVideoIdFromUrl = (url) => {
+        const match = url.match(/(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([^&]+)/) ||
+                      url.match(/(?:https?:\/\/)?youtu\.be\/([^?&]+)/);
+        return match ? match[1] : null;
+    };
+
+    // Function to handle YouTube URL submission
+    const handleYoutubeUrlSubmit = async () => {
+        const videoId = extractVideoIdFromUrl(youtubeUrl);
+
+        if (!videoId) {
+            alert("Invalid YouTube URL");
+            return;
+        }
+
+        try {
+            const response = await axios.get(`https://www.googleapis.com/youtube/v3/videos`, {
+                params: {
+                    part: "snippet,contentDetails",
+                    id: videoId,
+                    key: YoutubeAPIkey, // Replace with your API key
+                },
+            });
+
+            if (response.data.items.length === 0) {
+                alert("Video not found");
+                return;
+            }
+
+            const videoData = response.data.items[0];
+            const videoTitle = videoData.snippet.title;
+            const videoDuration = parseDuration(videoData.contentDetails.duration);
+
+            // Pass video details to the modal
+            setSelectedVideo({
+                id: { videoId },
+                snippet: { title: videoTitle },
+                contentDetails: { duration: videoData.contentDetails.duration },
+            });
+
+            setIsUrlModalOpen(false); // Close URL input modal
+            setIsCalendarModalOpen(true); // Open scheduling modal
+        } catch (error) {
+            console.error("YouTube API Error:", error);
+            alert("Failed to fetch video details. Please check the URL or try again later.");
+        }
+    };
+
+    const parseDuration = (duration) => {
+        // If the input is already a number (e.g., for MP4 files)
+        if (typeof duration === 'number') {
+            return duration; // Assume duration is in seconds
+        }
+
+        // If the input is a string (e.g., ISO8601 format for YouTube videos)
+        if (typeof duration === 'string') {
+            const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+            const hours = parseInt(match[1] || '0', 10) || 0;
+            const minutes = parseInt(match[2] || '0', 10) || 0;
+            const seconds = parseInt(match[3] || '0', 10) || 0;
+            return hours * 3600 + minutes * 60 + seconds; // Return duration in seconds
+        }
+
+        // If input is invalid
+        throw new Error('Invalid duration format');
+    };
+
+    const handleMp4Upload = async (event) => {
+        const file = event.target.files[0];
     
+        if (!file) {
+            alert('No file selected');
+            return;
+        }
+    
+        const videoTitle = file.name;
+    
+        try {
+            const duration = await getVideoDuration(file); // Duration in seconds
+    
+            setSelectedVideo({
+                id: { file }, // Store the file directly
+                snippet: { title: videoTitle },
+                contentDetails: { duration }, // Use numeric duration
+            });
+    
+            setMp4File(file);
+            setIsMp4ModalOpen(false);
+            setIsCalendarModalOpen(true); // Open scheduling modal
+        } catch (error) {
+            console.error('Error getting video duration:', error);
+            alert('Failed to get video duration');
+        }
+    };
+    
+
+    const getVideoDuration = (file) => {
+        return new Promise((resolve, reject) => {
+            const videoElement = document.createElement('video');
+            videoElement.src = URL.createObjectURL(file);
+
+            videoElement.onloadedmetadata = () => {
+                resolve(Math.floor(videoElement.duration)); // Duration in seconds
+            };
+
+            videoElement.onerror = () => {
+                reject(new Error('Error loading video metadata'));
+            };
+        });
+    };
+
+    const [holidays, setHolidays] = useState([]);
+
+    useEffect(() => {
+        axios.get('http://localhost:8000/api/public_holidays/')
+            .then((response) => {
+                console.log('Holidays fetched:', response.data);
+                setHolidays(response.data.holidays);
+            })
+            .catch((error) => {
+                console.error('Error fetching public holidays:', error);
+            });
+    }, []);
+
+
+    const isPublicHoliday = (date) => {
+        const formattedDate = date.toISOString().split('T')[0];
+        const holiday = holidays.find((holiday) => holiday.date === formattedDate);
+        return holiday;
+    };
+
 
     return (
         <div className="calendar">
@@ -331,35 +493,39 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                 <button style={{ width: '10%', margin: 'none'}} onClick={nextPeriod}>&gt;</button>
             </div>
             {(view === 'day' || view === 'week') && (
-            <div className="calendar-header">
-                {view === 'week' && <div className="empty-column"></div>} {/* Only show empty column for 'week' view */}
-                {view === 'week' ? (
-                currentWeek.map((day, index) => (
-                    <div key={index} className="calendar-header-day">
-                    <div
-                        style={{
-                        display: 'inline-block',
-                        color: 'white',
-                        fontSize: '14px',
-                        cursor: 'pointer',
-                        }}
-                        className="calendar-day-number"
-                        onClick={() => {
-                        setCurrentDate(resetTimeToMidnight(day));
-                        setView('day');
-                        }}
-                    >
-                        {day.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })}
-                    </div>
-                    </div>
-                ))
-                ) : (
-                <div className="calendar-header-day-day">
-                    {currentDate.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })}
+                <div className="calendar-header">
+                    {view === 'week' && <div className="empty-column"></div>} {/* Only show empty column for 'week' view */}
+                    {view === 'week' ? (
+                        currentWeek.map((day, index) => (
+                            <div 
+                                key={index} 
+                                className="calendar-header-day" 
+                            >
+                                <div
+                                    style={{
+                                        display: 'inline-block',
+                                        color: isPublicHoliday(resetTimeToMidnight(day)) ? '#ff9800' : 'white',
+                                        fontSize: '14px',
+                                        cursor: 'pointer',
+                                    }}
+                                    className="calendar-day-number"
+                                    onClick={() => {
+                                        setCurrentDate(resetTimeToMidnight(day));
+                                        setView('day');
+                                    }}
+                                >
+                                    {day.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })}
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="calendar-header-day-day">
+                            {currentDate.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })}
+                        </div>
+                    )}
                 </div>
-                )}
-            </div>
             )}
+
             {view === 'month' && (
             <div className="calendar-header-month">
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
@@ -371,11 +537,23 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
             <div className="calendar-body-container">
                 {view === 'day' ? (
                     <div className="calendar-body day-view">
+                        {/* Check if the current day is a holiday */}
+                        {isPublicHoliday(currentDate) && (
+                            <div
+                                style={{
+                                    backgroundColor: '#ff9800',
+                                    padding: '5px',
+                                    fontSize: '14px',                                
+                                    color: 'black',
+                                    textAlign: 'center',
+                                }}
+                            >
+                                Holiday: {isPublicHoliday(currentDate).title}
+                            </div>
+                        )}
                         {Array.from({ length: 24 }).map((_, hour) => (
                             <div className="calendar-hour-row day-view-row" key={hour}>
-                                <div className="calendar-hour-label day-view-label">
-                                    {hour}:00
-                                </div>
+                                <div className="calendar-hour-label day-view-label">{hour}:00</div>
                                 <div className="calendar-minute-slots day-view-slots">
                                     {Array.from({ length: 60 }).map((_, minute) => {
                                         const minuteKey = hour * 60 + minute;
@@ -383,12 +561,14 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                                         const isStartMinute = schedule.startMinute === minuteKey;
 
                                         return (
-                                            <div key={minuteKey}
+                                            <div
+                                                key={minuteKey}
                                                 style={{
                                                     backgroundColor: schedule.color || 'transparent',
-                                                    position: 'relative'
+                                                    position: 'relative',
                                                 }}
-                                                onClick={() => handleSlotClick(minuteKey, currentDate)}>
+                                                onClick={() => handleSlotClick(minuteKey, currentDate)}
+                                            >
                                                 {isStartMinute && <div className="event-title">{schedule.title}</div>}
                                             </div>
                                         );
@@ -409,16 +589,20 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                                                 const minuteKey = hour * 60 + minute;
                                                 const schedule = getSchedule(day, minuteKey);
                                                 const isStartMinute = schedule.startMinute === minuteKey;
-
+                
                                                 return (
-                                                    <div key={minuteKey} className="calendar-minute-slot"
+                                                    <div
+                                                        key={minuteKey}
+                                                        className="calendar-minute-slot"
                                                         style={{
                                                             backgroundColor: schedule.color || 'transparent',
                                                             position: 'relative',
                                                             height: '0.1em',
                                                         }}
-                                                        onClick={() => handleSlotClick(minuteKey, day)}>
-                                                        {isStartMinute && <div className="event-title">{schedule.title}</div>} {/* Show title only at the start minute */}
+                                                        onClick={() => handleSlotClick(minuteKey, day)}
+                                                    >
+                                                        {/* Show title only at the start minute */}
+                                                        {isStartMinute && <div className="event-title">{schedule.title}</div>}
                                                     </div>
                                                 );
                                             })}
@@ -430,46 +614,79 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                     </div>
                 ) : (
                     <div className="calendar-body-month">
-                {currentMonth.map((day, index) => (
-                    <div key={index} className="calendar-day-month">
-                        {day ? (
-                            <div className="calendar-day-number" style={{ cursor: 'pointer', color: 'black' }}  onClick={() => {
-                                setCurrentDate(resetTimeToMidnight(day));
-                                setView('day');
-                            }}>
-                                {day.getDate()}
-                                <div className="calendar-day-events" >
-                                    {/* Display all events for this day */}
-                                    {Object.values(getDaySchedules(resetTimeToMidnight(day))).map((event, eventIndex) => (
-                                        <div
-                                            key={eventIndex}
-                                            className="calendar-day-event"
-                                            style={{
-                                                backgroundColor: event.color,
-                                                fontSize: '10px',
-                                                marginTop: '2px',
-                                                padding: '2px',
-                                                borderRadius: '3px',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                whiteSpace: 'nowrap',
-                                            }}
-                                        >
-                                            {event.title}
+                        {currentMonth.map((day, index) => (
+                            <div
+                                key={index}
+                                className="calendar-day-month"
+                                style={{
+                                    backgroundColor: day && isPublicHoliday(resetTimeToMidnight(day)) ? '#ffe0b2' : 'transparent', // Highlight the entire day container
+                                    borderRadius: '5px', // Optional for rounded corners
+                                }}
+                            >
+                                {day ? (
+                                    <div
+                                        className={`calendar-day-number ${isPublicHoliday(resetTimeToMidnight(day)) ? "calendar-day-holiday" : ""}`}
+                                        style={{
+                                            cursor: 'pointer',
+                                            color: 'black',
+                                            backgroundColor: isPublicHoliday(resetTimeToMidnight(day)) ? '#ffe0b2' : 'transparent',
+                                        }}
+                                        onClick={() => {
+                                            setCurrentDate(resetTimeToMidnight(day));
+                                            setView('day');
+                                        }}
+                                    >
+                                        {day.getDate()}
+
+                                        {/* Display Holiday */}
+                                        {isPublicHoliday(resetTimeToMidnight(day)) && (
+                                            <div
+                                                style={{
+                                                    backgroundColor: '#ff9800',
+                                                    padding: '2px',
+                                                    borderRadius: '3px',
+                                                    fontSize: '10px',
+                                                    marginTop: '5px',
+                                                }}
+                                            >
+                                                {isPublicHoliday(resetTimeToMidnight(day)).title}
+                                            </div>
+                                        )}
+
+                                        {/* Display Events */}
+                                        <div className="calendar-day-events">
+                                            {Object.values(getDaySchedules(resetTimeToMidnight(day))).map((event, eventIndex) => (
+                                                <div
+                                                    key={eventIndex}
+                                                    className="calendar-day-event"
+                                                    style={{
+                                                        backgroundColor: event.color,
+                                                        fontSize: '10px',
+                                                        marginTop: '2px',
+                                                        padding: '2px',
+                                                        borderRadius: '3px',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap',
+                                                    }}
+                                                >
+                                                    <div className="month-event-title">{event.title}</div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
+                                    </div>
+                                ) : ''}
                             </div>
-                        ) : ''}
+                        ))}
                     </div>
-                ))}
-            </div>
+
                 )}
             </div>
             
 
             {/* Modal */}
             {isModalOpen && (
+                
                 <Modal
                     isOpen={isModalOpen}
                     onClose={onModalClose}
@@ -485,6 +702,7 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                     endTime={endTime}
                     setEndTime={setEndTime}
                     youtubeVideoId={youtubeVideoId}
+                    videoFile={mp4File} // For MP4 files
                     onSave={handleSaveSchedule}
                     onDelete={handleDeleteSchedule}
                 />
@@ -502,7 +720,72 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                 />
             )}
 
+            {/* Video Type Modal */}
+            {isVideoTypeModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3>Select Video Type</h3>
+                        <button onClick={() => { setIsUrlModalOpen(true); setIsVideoTypeModalOpen(false); }}>Insert YouTube URL</button>
+                        <button onClick={() => { setIsMp4ModalOpen(true); setIsVideoTypeModalOpen(false); }}>Insert MP4</button>
+                        <button onClick={() => setIsVideoTypeModalOpen(false)}>Cancel</button>
+                    </div>
+                </div>
+            )}
 
+
+            {isUrlModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3>Schedule a YouTube Video</h3>
+                        <input
+                            className="youtube-url-input"
+                            type="text"
+                            placeholder="Enter YouTube URL"
+                            value={youtubeUrl}
+                            onChange={(e) => setYoutubeUrl(e.target.value)}
+                        />
+                        <div className="modal-actions-container">
+                            <div className="modal-actions-left">
+                            </div>
+                            <div className='modal-actions-right'>
+                                <button onClick={() => setIsUrlModalOpen(false)}>Cancel</button>
+                                <button onClick={handleYoutubeUrlSubmit}>Submit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* MP4 File Upload Modal */}
+            {isMp4ModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3>Insert MP4</h3>
+                        <input
+                            type="file"
+                            accept="video/mp4"
+                            onChange={handleMp4Upload}
+                        />
+                        <button onClick={() => setIsMp4ModalOpen(false)}>Cancel</button>
+                    </div>
+                </div>
+            )}
+
+            {/* Calendar YouTube Modal for Scheduling */}
+            {isCalendarModalOpen && selectedVideo && (
+                <CalendarYoutubeModal
+                    video={selectedVideo}
+                    onClose={() => {
+                        setIsCalendarModalOpen(false);
+                        window.location.reload(); // Refresh the page when the modal closes
+                    }}
+                />
+            )}
+
+
+            {showAddVideoButton && (
+                <button onClick={() => setIsVideoTypeModalOpen(true)}>Add Video</button>
+            )}
         </div>
         
         
@@ -510,8 +793,30 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
 };
 
 
-const Modal = ({ isOpen, onClose, title, setTitle, details, setDetails, color, setColor, startTime, setStartTime, endTime, setEndTime, youtubeVideoId, onSave, onDelete }) => {
+const Modal = ({ isOpen, onClose, title, setTitle, details, setDetails, color, setColor, startTime, setStartTime, endTime, setEndTime, youtubeVideoId, videoFile, onSave, onDelete }) => {
+    const [mp4File, setMp4File] = useState(null);
+    useEffect(() => {
+        // Fetch the video file as a blob only when videoFile is a string
+        if (isOpen && typeof videoFile === 'string') {
+            console.log("Fetching video blob for:", videoFile);
+            axios
+                .get(`http://localhost:8000/videos/${videoFile}`, { responseType: 'blob',  })
+                .then((response) => {
+                    if (response.data instanceof Blob) {
+                        const blob = new Blob([response.data], { type: 'video/mp4' });
+                        setMp4File(blob); // Update state with Blob
+                        console.log("Blob fetched successfully:", blob);
+                    } else {
+                        console.error("Unexpected response type:", response.data);
+                    }
+                })
+                .catch((error) => console.error("Error fetching video blob:", error));
+        } else {
+            setMp4File(videoFile || null); // Handle cases where videoFile is already a Blob or null
+        }
+    }, [videoFile, isOpen]); // Re-run only when videoFile or isOpen changes
     
+
 
     // Define the available hour and minute options
     const hourOptions = Array.from({ length: 24 }, (_, index) => index); // 0-23 hours
@@ -549,7 +854,6 @@ const Modal = ({ isOpen, onClose, title, setTitle, details, setDetails, color, s
     return (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h2>Schedule for {title || "Untitled"}</h2>
                 <input
                     type="text"
                     value={title}
@@ -564,8 +868,10 @@ const Modal = ({ isOpen, onClose, title, setTitle, details, setDetails, color, s
                         placeholder="Enter event details"
                     ></textarea>
 
+                    {/* Render video based on the type */}
                     {youtubeVideoId && (
-                        <div className="youtube-video">
+                        <div className="video-container">
+                            {/* Display YouTube video */}
                             <iframe
                                 src={`https://www.youtube.com/embed/${youtubeVideoId}`}
                                 frameBorder="0"
@@ -573,29 +879,62 @@ const Modal = ({ isOpen, onClose, title, setTitle, details, setDetails, color, s
                                 allowFullScreen
                                 title={title}
                                 className="video-display"
+                            
                             ></iframe>
                         </div>
                     )}
+
+                    {videoFile ? (
+                        !mp4File ? (
+                            <div className="LoadingVideo">Loading video...</div>
+                        ) : (
+                            <video
+                                controls
+                                className="video-display"
+                                style={{
+                                    width: "50%",
+                                    maxHeight: "300px",
+                                    borderRadius: "8px",
+                                    marginTop: "10px",
+                                }}
+                            >
+                                <source src={URL.createObjectURL(mp4File)} type="video/mp4" />
+                            </video>
+                        )
+                    ) : (
+                        <div></div>
+                    )}
+
+
+
                 </div>
-                
+
                 <label>Start Time:</label>
                 <div className="time-selection-container">
                     <select
                         value={startHour}
                         onChange={(e) => handleStartTimeChange(parseInt(e.target.value), startMinute)}
                     >
-                        <option value="" disabled>Select Hour</option>
+                        <option value="" disabled>
+                            Select Hour
+                        </option>
                         {hourOptions.map((hour) => (
-                            <option key={hour} value={hour}>{hour}</option>
+                            <option key={hour} value={hour}>
+                                {hour}
+                            </option>
                         ))}
                     </select>
                     <select
                         value={startMinute}
                         onChange={(e) => handleStartTimeChange(startHour, parseInt(e.target.value))}
                     >
-                        <option value="" disabled>Select Minute</option>
+                        <option value="" disabled>
+                            Select Minute
+                        </option>
                         {minuteOptions.map((minute) => (
-                            <option key={minute} value={minute}>{minute}</option>
+                            <option key={minute} value={minute}>
+                                {minute}
+                            </option>
                         ))}
                     </select>
                 </div>
@@ -606,18 +945,26 @@ const Modal = ({ isOpen, onClose, title, setTitle, details, setDetails, color, s
                         value={endHour}
                         onChange={(e) => handleEndTimeChange(parseInt(e.target.value), endMinute)}
                     >
-                        <option value="" disabled>Select Hour</option>
+                        <option value="" disabled>
+                            Select Hour
+                        </option>
                         {hourOptions.map((hour) => (
-                            <option key={hour} value={hour}>{hour}</option>
+                            <option key={hour} value={hour}>
+                                {hour}
+                            </option>
                         ))}
                     </select>
                     <select
                         value={endMinute}
                         onChange={(e) => handleEndTimeChange(endHour, parseInt(e.target.value))}
                     >
-                        <option value="" disabled>Select Minute</option>
+                        <option value="" disabled>
+                            Select Minute
+                        </option>
                         {minuteOptions.map((minute) => (
-                            <option key={minute} value={minute}>{minute}</option>
+                            <option key={minute} value={minute}>
+                                {minute}
+                            </option>
                         ))}
                     </select>
                 </div>
@@ -629,9 +976,9 @@ const Modal = ({ isOpen, onClose, title, setTitle, details, setDetails, color, s
                             className="color-preset"
                             style={{
                                 backgroundColor: preset,
-                                border: color === preset ? '2px solid black' : 'none' // Highlight selected color
+                                border: color === preset ? '2px solid black' : 'none',
                             }}
-                            onClick={() => setColor(preset)} // Set selected color
+                            onClick={() => setColor(preset)}
                         ></div>
                     ))}
                     <input
@@ -643,11 +990,17 @@ const Modal = ({ isOpen, onClose, title, setTitle, details, setDetails, color, s
 
                 <div className="modal-actions-container">
                     <div className="modal-actions-left">
-                        <button onClick={onClose} style={{ width: '100%'}}>Cancel</button>
+                        <button onClick={onClose} style={{ width: '100%' }}>
+                            Cancel
+                        </button>
                     </div>
-                    <div className='modal-actions-right'>
-                        <button onClick={onDelete} style={{ width: '40%'}}>Delete</button>
-                        <button onClick={onSave} style={{ width: '40%'}}>Save</button>
+                    <div className="modal-actions-right">
+                        <button onClick={onDelete} style={{ width: '40%' }}>
+                            Delete
+                        </button>
+                        <button onClick={onSave} style={{ width: '40%' }}>
+                            Save
+                        </button>
                     </div>
                 </div>
             </div>

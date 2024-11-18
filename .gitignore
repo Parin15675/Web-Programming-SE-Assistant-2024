@@ -4,3 +4,4 @@ web_pro/node_modules/.cache/default-development/index.pack
 web_pro/node_modules/.cache/default-development/1.pack
 web_pro/node_modules/.cache/default-development/0.pack
 web_pro/node_modules/.cache/.eslintcache
+*.pack

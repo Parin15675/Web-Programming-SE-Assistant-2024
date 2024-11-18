@@ -1,45 +1,93 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import Nav from '../Nav';
-import { useSelector } from 'react-redux';
-import StarRatingComponent from 'react-star-rating-component';
-import { Line } from 'react-chartjs-2';
-import 'chart.js/auto';
-import YoutubeSearch from '../Calendar/YoutubeSearch';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import Nav from "../Nav";
+import { useSelector } from "react-redux";
+import StarRatingComponent from "react-star-rating-component";
+import { Line, Bar } from "react-chartjs-2";
+import "chart.js/auto";
 
 function Course_2() {
-  const [year, setYear] = useState(1);
-  const [curriculum, setCurriculum] = useState(null);
-  const [isReturningUser, setIsReturningUser] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState(null);
-  const [showPopup, setShowPopup] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [ratings, setRatings] = useState({});
-  const [career, setCareer] = useState('');
-  const [careerRequirement, setCareerRequirement] = useState('B');
+  const [curriculum, setCurriculum] = useState({
+    subjects: [{ name: "No Subjects Available", topics: [] }],
+  });
 
-  const profile = useSelector(state => state.profile);
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [ratings, setRatings] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isReturningUser, setIsReturningUser] = useState(false);
+  const [year, setYear] = useState(1);
+  const [career, setCareer] = useState("");
+  const [field, setField] = useState("");
+  const [name, setName] = useState("");
+  const [gradeInfo, setGradeInfo] = useState({
+    status: "",
+    message: "",
+    gpa: 0,
+  });
+
+  const profile = useSelector((state) => state.profile);
+
+  const gradeRequirements = {
+    Metaverse: { "Database Systems": 2.0 },
+    "Data Analysis": { Statistics: 2.5, "Machine Learning": 3.0 },
+    IoT: { Networking: 2.5, "Embedded Systems": 3.0 },
+    AI: { "Deep Learning": 3.5, "Neural Networks": 3.5 },
+  };
+
+  const targetGPA = {
+    Metaverse: 3.0,
+    "Data Analysis": 3.5,
+    IoT: 3.2,
+    AI: 3.5,
+  };
+
+  const starToGrade = (stars) => {
+    if (stars === 10) return 4.0;
+    if (stars === 9) return 3.5;
+    if (stars === 8) return 3.0;
+    if (stars === 7) return 2.5;
+    if (stars === 6) return 2.0;
+    if (stars === 5) return 1.5;
+    if (stars === 4) return 1.0;
+    if (stars === 3) return 0.5;
+    return 0.0;
+  };
 
   useEffect(() => {
     if (profile && profile.email) {
-      axios.get(`http://localhost:8000/api/user/${encodeURIComponent(profile.email)}`)
-        .then(res => {
-          setCurriculum(res.data.curriculum);
+      axios
+        .get(
+          `http://localhost:8000/api/user/schedules/${encodeURIComponent(
+            profile.email
+          )}`
+        )
+        .then((res) => {
+          if (res.data.curriculum.subjects.length === 0) {
+            // If no subjects are returned, set a placeholder
+            setCurriculum({
+              subjects: [{ name: "No Subjects Available", topics: [] }],
+            });
+          } else {
+            setCurriculum(res.data.curriculum);
+          }
           setYear(res.data.user.year);
-          setCareer(res.data.user.career || "No career selected");
+          setCareer(res.data.user.career);
+          setField(res.data.user.field);
+          setName(res.data.user.name);
           setIsReturningUser(true);
 
-          if (res.data.user && res.data.user.ratings) {
-            const updatedRatings = {};
-            res.data.curriculum.subjects.forEach((subject) => {
-              updatedRatings[subject.name] = res.data.user.ratings[subject.name] ?? -1;
+          const updatedRatings = {};
+          res.data.curriculum.subjects.forEach((subject) => {
+            updatedRatings[subject.name] = {};
+            (subject.topics || []).forEach((topic) => {
+              updatedRatings[subject.name][topic.name] = topic.rating || 0;
             });
-            setRatings(updatedRatings);
-          }
+          });
+          setRatings(updatedRatings);
           setIsLoading(false);
         })
-        .catch(err => {
-          console.error('Error fetching user data:', err);
+        .catch((err) => {
+          console.error("Error fetching user data:", err);
           setIsReturningUser(false);
           setIsLoading(false);
         });
@@ -48,352 +96,521 @@ function Course_2() {
     }
   }, [profile]);
 
-  useEffect(() => {
-    const careerRequirements = {
-      "Data Analysis": "B+",
-      "Software Engineer": "B",
-      "Web Development": "B",
-      "Other": "C"
-    };
+  const onTopicRatingChange = (subjectName, topicName, nextValue) => {
+    setRatings((prevRatings) => ({
+      ...prevRatings,
+      [subjectName]: {
+        ...prevRatings[subjectName],
+        [topicName]: nextValue,
+      },
+    }));
 
-    setCareerRequirement(careerRequirements[career] || "C");
-  }, [career]);
+    // Send the updated rating to the backend
+    axios
+      .post("http://localhost:8000/api/user/rating", {
+        gmail: profile.email,
+        subject: subjectName,
+        topic: topicName,
+        rating: nextValue,
+      })
+      .catch((err) => {
+        console.error("Error updating rating:", err);
+      });
+  };
+
+  const calculatePredictedGrades = () => {
+    const averageGrades = calculateAverageGrades();
+    const currentSum = averageGrades.reduce(
+      (sum, grade) => sum + (grade > 0 ? grade : 0),
+      0
+    ); // Sum only rated grades
+    const ratedSubjects = averageGrades.filter((grade) => grade > 0).length;
+    const remainingSubjects = curriculum.subjects.length - ratedSubjects;
+    const requiredGPA = targetGPA[field] || 3.0;
+
+    if (remainingSubjects === 0) return averageGrades; // If all subjects are rated, no prediction is needed
+
+    const remainingRequiredGrade =
+      (requiredGPA * curriculum.subjects.length - currentSum) /
+      remainingSubjects;
+
+    // Build predicted grades: Use rated grades and predict for unrated subjects
+    return curriculum.subjects.map((_, index) => {
+      return averageGrades[index] > 0 // Use current grade for rated subjects
+        ? averageGrades[index]
+        : remainingRequiredGrade <= 4 && remainingRequiredGrade >= 0 // Predict only if valid
+        ? remainingRequiredGrade
+        : null; // If prediction is invalid or not needed, leave as null
+    });
+  };
+
+  const calculateAverageGrades = () => {
+    return curriculum.subjects.map((subject) => {
+      const topicRatings = Object.values(ratings[subject.name] || {}).filter(
+        (rating) => rating !== -1
+      );
+      const total = topicRatings.reduce(
+        (sum, rating) => sum + starToGrade(rating),
+        0
+      );
+      return topicRatings.length > 0 ? total / topicRatings.length : 0;
+    });
+  };
+
+  const getFullyRatedSubjects = () => {
+    return curriculum.subjects.filter((subject) =>
+      subject.topics.every(
+        (topic) =>
+          ratings[subject.name]?.[topic.name] !== undefined &&
+          ratings[subject.name]?.[topic.name] !== -1
+      )
+    );
+  };
+
+  const renderProgressBar = (percent) => (
+    <div className="w-full bg-gray-300 rounded-full h-4 mt-2">
+      <div
+        className="bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 h-4 rounded-full transition-all duration-500 ease-in-out"
+        style={{ width: `${percent}%` }}
+      ></div>
+    </div>
+  );
+
+  const calculateProgress = (subject) => {
+    const totalTopics = subject.topics.length;
+    const ratedTopics = Object.values(ratings[subject.name] || {}).filter(
+      (rating) => rating !== -1
+    ).length;
+    return Math.round((ratedTopics / totalTopics) * 100);
+  };
+
+  const calculateGradeInfo = () => {
+    const fullyRatedSubjects = getFullyRatedSubjects(); // Only fully rated subjects
+    const currentSum = fullyRatedSubjects.reduce((sum, subject) => {
+      const topicRatings = Object.values(ratings[subject.name] || {}).filter(
+        (rating) => rating !== -1
+      );
+      const total = topicRatings.reduce(
+        (sum, rating) => sum + starToGrade(rating),
+        0
+      );
+      return sum + (topicRatings.length > 0 ? total / topicRatings.length : 0);
+    }, 0);
+
+    const ratedSubjects = fullyRatedSubjects.length;
+    const remainingSubjects = curriculum.subjects.length - ratedSubjects;
+    const requiredGPA = targetGPA[field] || 3.0;
+
+    const currentGPA = ratedSubjects > 0 ? currentSum / ratedSubjects : 0;
+
+    // Check if the user fails any specific subject requirement
+    const fieldRequirements = gradeRequirements[field] || {};
+    for (const [subject, requiredGrade] of Object.entries(fieldRequirements)) {
+      const subjectIndex = curriculum.subjects.findIndex(
+        (s) => s.name === subject
+      );
+      if (
+        subjectIndex !== -1 &&
+        fullyRatedSubjects.some(
+          (s) =>
+            s.name === subject &&
+            calculateAverageGrades()[subjectIndex] < requiredGrade
+        )
+      ) {
+        setGradeInfo({
+          status: "fail",
+          gpa: currentGPA,
+          message: `Failed to meet the minimum grade requirement for ${subject}.`,
+        });
+        return;
+      }
+    }
+
+    // Calculate the required grade for the remaining subjects
+    const requiredGrade =
+      remainingSubjects > 0
+        ? (requiredGPA * curriculum.subjects.length - currentSum) /
+          remainingSubjects
+        : 0;
+
+    // Determine the status based on the required grade
+    if (remainingSubjects === 0) {
+      if (currentGPA >= requiredGPA) {
+        setGradeInfo({
+          status: "pass",
+          gpa: currentGPA,
+          message: "You have passed the requirement!",
+        });
+      } else {
+        setGradeInfo({
+          status: "fail",
+          gpa: currentGPA,
+          message: "You did not meet the GPA requirement.",
+        });
+      }
+    } else if (requiredGrade > 4) {
+      // "Impossible" condition: required grade exceeds the maximum grade
+      setGradeInfo({
+        status: "impossible",
+        gpa: currentGPA,
+        message:
+          "It is impossible to pass the requirement with the remaining subjects.",
+      });
+    } else {
+      setGradeInfo({
+        status: "progress",
+        gpa: currentGPA,
+        message: `You need an average grade of ${requiredGrade.toFixed(
+          2
+        )} in the remaining subjects to pass the requirement.`,
+      });
+    }
+  };
+
+  useEffect(() => {
+    calculateGradeInfo();
+  }, [ratings, field]);
 
   const handleSubjectClick = (subject) => {
-    if (selectedSubject === subject) {
-      setShowPopup(false);
-      setSelectedSubject(null);
-    } else {
-      setSelectedSubject(subject);
-      setShowPopup(true);
-    }
+    setSelectedSubject(subject === selectedSubject ? null : subject);
   };
 
-  const handleClosePopup = () => {
-    setShowPopup(false);
-    setSelectedSubject(null);
+  const resetSubjectRatings = (subjectName) => {
+    setRatings((prevRatings) => ({
+      ...prevRatings,
+      [subjectName]: Object.keys(prevRatings[subjectName] || {}).reduce(
+        (acc, topicName) => {
+          acc[topicName] = -1; // Reset to -1
+          return acc;
+        },
+        {}
+      ),
+    }));
+
+    // Optional: Send reset data to the backend
+    axios
+      .post("http://localhost:8000/api/user/reset-rating", {
+        gmail: profile.email,
+        subject: subjectName,
+      })
+      .catch((err) => {
+        console.error("Error resetting ratings:", err);
+      });
   };
 
-  const onStarClick = (nextValue, prevValue, index) => {
-    const subjectName = curriculum.subjects[index].name;
-    setRatings({ ...ratings, [subjectName]: nextValue });
+  const barGraphData = {
+    labels: Object.keys(gradeRequirements[field] || {}),
+    datasets: [
+      {
+        label: "Required Grade",
+        data: Object.keys(gradeRequirements[field] || {}).map(
+          (subject) => gradeRequirements[field][subject]
+        ),
+        backgroundColor: "rgba(255, 99, 132, 0.5)",
+        borderColor: "rgba(255, 99, 132, 1)",
+        borderWidth: 1,
+      },
+      {
+        label: "Your Grade",
+        data: Object.keys(gradeRequirements[field] || {}).map((subject) => {
+          const subjectIndex = curriculum.subjects.findIndex(
+            (s) => s.name === subject
+          );
+          if (subjectIndex !== -1) {
+            const topicRatings = Object.values(ratings[subject] || {});
+            const isFullyRated = topicRatings.every(
+              (rating) =>
+                rating !== null && rating !== undefined && rating !== -1
+            );
 
-    axios.post('http://localhost:8000/api/user/rating', {
-      gmail: profile.email,
-      subject: subjectName,
-      rating: nextValue,
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).catch(err => {
-      console.error('Error:', err);
-    });
+            if (isFullyRated) {
+              const total = topicRatings.reduce(
+                (sum, rating) => sum + starToGrade(rating),
+                0
+              );
+              return total / topicRatings.length; // Average grade
+            }
+          }
+          return null; // Return null for unrated subjects
+        }),
+        backgroundColor: "rgba(75, 192, 192, 0.5)",
+        borderColor: "rgba(75, 192, 192, 1)",
+        borderWidth: 1,
+      },
+    ],
   };
 
-  const handleResetRating = (subject, index) => {
-    setRatings({ ...ratings, [subject.name]: -1 });
-
-    axios.post('http://localhost:8000/api/user/rating', {
-      gmail: profile.email,
-      subject: subject.name,
-      rating: -1,
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).catch(err => {
-      console.error('Error:', err);
-    });
-  };
-
-  const starRatingToNumericGrade = (stars) => {
-    if (stars === 10) return 4.0;
-    if (stars === 9) return 3.5;
-    if (stars === 8) return 3.0;
-    if (stars === 7) return 2.5;
-    if (stars === 6) return 2.0;
-    if (stars === 5) return 1.5;
-    if (stars === 4) return 1.0;
-    return 0;
-  };
-
-  const letterGradeToNumeric = (grade) => {
-    switch (grade) {
-      case 'A': return 4.0;
-      case 'B+': return 3.5;
-      case 'B': return 3.0;
-      case 'C+': return 2.5;
-      case 'C': return 2.0;
-      case 'D+': return 1.5;
-      case 'D': return 1.0;
-      case 'F': return 0.0;
-      default: return 0.0;
-    }
-  };
-
-  const calculatePredictedGrade = () => {
-    const requiredAverageNumeric = letterGradeToNumeric(careerRequirement);
-    let enteredGrades = 0, enteredTotal = 0;
-
-    curriculum.subjects.forEach((subject) => {
-      const stars = ratings[subject.name];
-      const numericGrade = starRatingToNumericGrade(stars);
-      
-      if (numericGrade !== null && numericGrade !== undefined && stars !== -1) {
-        enteredGrades += 1;
-        enteredTotal += numericGrade;
-      }
-    });
-
-    const remainingSubjects = curriculum.subjects.length - enteredGrades;
-    if (remainingSubjects === 0) {
-      return null;
-    }
-
-    const predictedGrade = (requiredAverageNumeric * curriculum.subjects.length - enteredTotal) / remainingSubjects;
-    return predictedGrade;
-  };
-
-  const calculateCurrentAverage = () => {
-    let enteredTotal = 0, enteredGrades = 0;
-
-    curriculum.subjects.forEach((subject) => {
-      const stars = ratings[subject.name];
-      const numericGrade = starRatingToNumericGrade(stars);
-
-      if (numericGrade !== null && numericGrade !== undefined && stars !== -1) {
-        enteredGrades += 1;
-        enteredTotal += numericGrade;
-      }
-    });
-
-    return enteredGrades ? (enteredTotal / enteredGrades).toFixed(2) : 0;
-  };
-
-  const isPossibleToAchieveRequirement = () => {
-    const predictedGrade = calculatePredictedGrade();
-    return predictedGrade === null || predictedGrade <= 4.0;
-  };
-
-  const hasPassedRequirement = () => {
-    const requiredAverageNumeric = letterGradeToNumeric(careerRequirement);
-    const currentAverage = parseFloat(calculateCurrentAverage());
-
-    if (calculatePredictedGrade() === null && currentAverage >= requiredAverageNumeric) {
-      return true;
-    }
-    return false;
+  const barGraphOptions = {
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 4, // Set max to 4
+        ticks: {
+          stepSize: 0.5, // Optional: Add steps of 0.5 for clarity
+        },
+      },
+    },
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!profile || !profile.name || !profile.email || !year || !career) {
-      console.error("Missing profile, email, year or career information");
+    if (!profile || !profile.email || !field || !career || !year) {
+      console.error(
+        "Missing profile, email, field, career, or year information"
+      );
       return;
     }
 
     const userData = {
-      name: profile.name,
+      name: profile.name || "Anonymous", // Fallback for name
       gmail: profile.email,
       year,
       career,
+      field, // Include the field property
     };
 
-    axios.post('http://localhost:8000/api/user/', userData)
-      .then(res => {
-        setCurriculum(res.data.curriculum);
-        setIsReturningUser(true);
+    axios
+      .post("http://localhost:8000/api/user/", userData)
+      .then((res) => {
+        if (res.data && res.data.curriculum) {
+          setCurriculum(res.data.curriculum);
+          setIsReturningUser(true);
+          console.log(isReturningUser);
+        } else {
+          console.error("No curriculum data returned from the server.");
+        }
       })
-      .catch(err => {
-        console.error('Error:', err);
+      .catch((err) => {
+        console.error("Error saving user data:", err);
       });
   };
 
-  const generateCombinedChartData = () => {
-    if (!curriculum || !careerRequirement) return null;
+  const lineGraphData = {
+    labels: curriculum.subjects.map((subject) => subject.name),
+    datasets: [
+      {
+        label: "Average Grades",
+        data: curriculum.subjects.map((subject) => {
+          const topicRatings = Object.values(ratings[subject.name] || {});
+          const isFullyRated = topicRatings.every(
+            (rating) => rating !== null && rating !== -1
+          );
 
-    const labels = curriculum.subjects.map(subject => subject.name);
-    const userGradesData = labels.map(subjectName => starRatingToNumericGrade(ratings[subjectName]) || 0);
-    const predictedGrade = calculatePredictedGrade();
-    const predictedGradesData = labels.map(subjectName => starRatingToNumericGrade(ratings[subjectName]) || (predictedGrade ? Math.min(predictedGrade, 4) : 0));
-
-    return {
-      labels,
-      datasets: [
-        {
-          label: 'User Grades',
-          fill: false,
-          lineTension: 0.1,
-          backgroundColor: 'rgba(75,192,192,0.4)',
-          borderColor: 'rgba(75,192,192,1)',
-          data: userGradesData
-        },
-        {
-          label: `${career} Predicted Grade`,
-          fill: false,
-          lineTension: 0.1,
-          backgroundColor: 'rgba(153,102,255,0.4)',
-          borderColor: 'rgba(153,102,255,1)',
-          data: predictedGradesData
-        }
-      ]
-    };
+          if (isFullyRated) {
+            const total = topicRatings.reduce(
+              (sum, rating) => sum + starToGrade(rating),
+              0
+            );
+            return total / topicRatings.length; // Average grade
+          }
+          return null; // Leave the point empty if not fully rated
+        }),
+        borderColor: "rgba(75, 192, 192, 1)",
+        backgroundColor: "rgba(75, 192, 192, 0.2)",
+        borderWidth: 2,
+      },
+      {
+        label: "Predicted Grades",
+        data: calculatePredictedGrades(),
+        borderColor: "rgba(255, 99, 132, 1)",
+        backgroundColor: "rgba(255, 99, 132, 0.2)",
+        borderDash: [5, 5],
+        borderWidth: 2,
+      },
+    ],
   };
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
+  const lineGraphOptions = {
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 4, // Set max to 4
+        ticks: {
+          stepSize: 0.5, // Optional: Add steps of 0.5 for clarity
+        },
+      },
+    },
+  };
 
   return (
     <>
       <Nav />
-      <div className="App pt-32 pl-10 bg-slate-300">
-        <h1 className="text-3xl font-extrabold mb-5 text-gray-800">Register and Get Curriculum</h1>
-
-        {profile && (
-          <div className="bg-gray-100 p-6 rounded-lg shadow-lg mb-8">
-            <label className="block text-lg mb-4">
-              <span className="font-semibold">Name:</span> {profile.name} ({profile.email})
-            </label>
-
-            {isReturningUser ? (
-              <p className="mb-4 text-gray-600">Year: {year}, Career Interest: <span className="text-blue-600">{career}</span></p>
-            ) : (
-              <div>
-                <label className="block mb-4">
-                  Select Year:
-                  <select
-                    value={year}
-                    onChange={(e) => setYear(Number(e.target.value))}
-                    className="block mt-1 w-full border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value={1}>Year 1</option>
-                    <option value={2}>Year 2</option>
-                    <option value={3}>Year 3</option>
-                    <option value={4}>Year 4</option>
-                  </select>
-                </label>
-
-                <label className="block mb-4">
-                  Select Career Interest:
-                  <select
-                    value={career}
-                    onChange={(e) => setCareer(e.target.value)}
-                    className="block mt-1 w-full border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Select a Career</option>
-                    <option value="Data Analysis">Data Analysis</option>
-                    <option value="Software Engineer">Software Engineer</option>
-                    <option value="Web Development">Web Development</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </label>
-
-                <button
-                  onClick={handleSubmit}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all"
+      <div className="p-6 pt-32 bg-gradient-to-r from-orange-400 to-red-500">
+        {!isReturningUser ? (
+          <div className="max-w-md mx-auto mt-10 p-6 bg-gradient-to-r from-orange-400 to-red-500 rounded-lg shadow-md">
+            <h2 className="text-xl font-bold text-center mb-6">
+              Welcome! Complete Your Profile
+            </h2>
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              <label className="block text-gray-700">
+                Select Year:
+                <select
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                  value={year}
+                  onChange={(e) => setYear(Number(e.target.value))}
                 >
-                  Submit
-                </button>
-              </div>
-            )}
+                  <option value={1}>Year 1</option>
+                  <option value={2}>Year 2</option>
+                  <option value={3}>Year 3</option>
+                  <option value={4}>Year 4</option>
+                </select>
+              </label>
+              <label className="block text-gray-700">
+                Select Career:
+                <select
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                  value={career}
+                  onChange={(e) => setCareer(e.target.value)}
+                >
+                  <option value="">Select a Career</option>
+                  <option value="Data Analysis">Data Analysis</option>
+                  <option value="Software Engineer">Software Engineer</option>
+                  <option value="Web Development">Web Development</option>
+                  <option value="Other">Other</option>
+                </select>
+              </label>
+              <label className="block text-gray-700">
+                Field of Interest:
+                <select
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                  value={field}
+                  onChange={(e) => setField(e.target.value)}
+                >
+                  <option value="">Select a Field</option>
+                  <option value="AI">AI</option>
+                  <option value="Metaverse">Metaverse</option>
+                  <option value="IoT">IoT</option>
+                  <option value="Do Abroad">Do Abroad</option>
+                </select>
+              </label>
+              <button
+                type="submit"
+                onClick={handleSubmit}
+                className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-full w-full"
+              >
+                Submit
+              </button>
+            </form>
           </div>
-        )}
+        ) : (
+          <>
+            <div className="text-center mb-10 ">
+              <h1 className="text-4xl font-extrabold text-gray-800">
+                Your Academic Journey
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Track your progress and see how you are performing across all
+                subjects.
+              </p>
+            </div>
 
-        {/* Flexbox layout with Subject Boxes on Left and Grade Info + Graph on Right */}
-        <div className="flex flex-col lg:flex-row gap-10">
-          
-          {/* Left Side: Subject List */}
-          <div className="lg:w-1/2 space-y-4">
-            <h2 className="text-2xl font-semibold mb-4 text-gray-800">Curriculum for Year {curriculum.year}</h2>
-            {curriculum.subjects.map((subject, index) => (
-              <div key={index} className="bg-slate-600 border border-gray-300 rounded-lg p-5 mb-5 transition-transform transform hover:scale-105 shadow-sm">
-                <h3
-                  className="cursor-pointer text-lg font-medium text-white"
-                  onClick={() => handleSubjectClick(subject)}
-                >
-                  {subject.name}
-                </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white p-4 rounded shadow-md">
+                <h2 className="text-lg font-bold">User Information</h2>
+                <p>Name: {name}</p>
+                <p>Year: {year}</p>
+                <p>Career: {career}</p>
+                <p>Field: {field}</p>
+              </div>
+              <div
+                className={`bg-white p-4 rounded shadow-md ${
+                  gradeInfo.status === "pass"
+                    ? "border-green-500 text-green-700"
+                    : gradeInfo.status === "fail"
+                    ? "border-red-500 text-red-700"
+                    : gradeInfo.status === "impossible"
+                    ? "border-orange-500 text-orange-700"
+                    : "border-gray-300 text-gray-700"
+                }`}
+                style={{
+                  borderWidth: "2px", // Optional: Add a thicker border for visual clarity
+                }}
+              >
+                <h2 className="text-lg font-bold">Grade Information</h2>
+                <p>Current GPA: {gradeInfo.gpa.toFixed(2)}</p>
+                <p>{gradeInfo.message}</p>
+              </div>
+            </div>
 
-                {showPopup && selectedSubject === subject && (
-                  <div className="bg-white p-5 mt-5 rounded-lg shadow-md">
-                    <h3 className="text-lg font-semibold mb-2">Subject Details</h3>
-                    <p className="mb-2">Subject: {subject.name}</p>
-                    <p className="mb-4">Description: {subject.description}</p>
+            <h2 className="text-xl font-bold mt-6 pt-6">Subjects</h2>
+            <div className="flex flex-col space-y-4 pt-3">
+              {curriculum.subjects.map((subject, index) => {
+                const progressPercent = subject.topics?.length
+                  ? calculateProgress(subject)
+                  : 0; // Set progress to 0 if no topics exist
 
-                    <div className="mb-4">
-                      <h3 className="text-lg">Your Rating:</h3>
-                      <StarRatingComponent
-                        name={subject.name}
-                        starCount={10}
-                        value={ratings[subject.name] === -1 ? 0 : ratings[subject.name]}
-                        emptyStarColor={ratings[subject.name] === -1 ? '#ccc' : undefined}
-                        onStarClick={(nextValue, prevValue) => onStarClick(nextValue, prevValue, index)}
-                      />
+                return (
+                  <div
+                    key={index}
+                    className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:-translate-y-1"
+                  >
+                    <div
+                      className="cursor-pointer"
+                      onClick={() => handleSubjectClick(subject)}
+                    >
+                      <h3 className="text-lg font-bold">{subject.name}</h3>
+                      <p className="text-sm text-gray-600">
+                        {subject.topics?.length
+                          ? `${progressPercent}% completed`
+                          : "No topics available"}
+                      </p>
+                      {subject.topics?.length &&
+                        renderProgressBar(progressPercent)}
                     </div>
+                    {selectedSubject === subject && subject.topics?.length && (
+                      <div className="mt-4 bg-gray-100 p-4 rounded shadow">
+                        <h4 className="text-md font-bold">
+                          Details for {subject.name}
+                        </h4>
+                        <p>
+                          {subject.description || "No description available."}
+                        </p>
+                        <h4 className="text-md font-bold mt-4">Topics</h4>
+                        {subject.topics.map((topic, idx) => (
+                          <div key={idx} className="mt-2">
+                            <h5>{topic.name}</h5>
+                            <StarRatingComponent
+                              name={`${subject.name}-${topic.name}`}
+                              starCount={10}
+                              value={ratings[subject.name]?.[topic.name] || -1}
+                              onStarClick={(nextValue) =>
+                                onTopicRatingChange(
+                                  subject.name,
+                                  topic.name,
+                                  nextValue
+                                )
+                              }
+                            />
+                          </div>
+                        ))}
 
-                    <button
-                      onClick={() => handleResetRating(subject, index)}
-                      className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-all"
-                    >
-                      Reset Rating
-                    </button>
-
-                    <button
-                      onClick={handleClosePopup}
-                      className="ml-4 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-all"
-                    >
-                      Close
-                    </button>
-                    <YoutubeSearch />
+                        {/* Reset Button */}
+                        <button
+                          className="mt-4 px-4 py-2 bg-red-500 text-white rounded"
+                          onClick={() => resetSubjectRatings(subject.name)}
+                        >
+                          Reset Ratings for {subject.name}
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
+                );
+              })}
+            </div>
+
+            <div className="grid grid-cols-2 gap-6 mt-10">
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <h2 className="text-lg font-bold mb-4">Subject Requirements</h2>
+                <Bar data={barGraphData} options={barGraphOptions} />
               </div>
-            ))}
-          </div>
-
-          {/* Right Side: Grade Information and Graph */}
-          <div className="lg:w-1/2 space-y-6">
-            {/* Grade Information Box */}
-            <div className="bg-gray-100 p-6 rounded-lg shadow-lg">
-              <h2 className="text-2xl font-semibold text-gray-800">Grade Information</h2>
-              <p className="mb-2 text-gray-600">Current Average Grade: {calculateCurrentAverage()}</p>
-              {isPossibleToAchieveRequirement() && calculatePredictedGrade() !== null ? (
-                <p className="text-yellow-600">
-                  To meet the requirement of {careerRequirement} average, you need a grade of <strong>{Math.min(calculatePredictedGrade(), 4)}</strong> in remaining subjects.
-                </p>
-              ) : calculatePredictedGrade() === null ? (
-                hasPassedRequirement() ? (
-                  <p className="text-green-600">Congratulations! You have met the requirement of {careerRequirement} average.</p>
-                ) : (
-                  <p className="text-red-600">You have entered all grades, but unfortunately, you did not meet the required average of {careerRequirement}.</p>
-                )
-              ) : (
-                <p className="text-red-600">It is impossible to meet the required average of {careerRequirement} based on your current grades.</p>
-              )}
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <h2 className="text-lg font-bold mb-4">Overall Progress</h2>
+                <Line data={lineGraphData} options={lineGraphOptions} />
+              </div>
             </div>
-
-            {/* Graph */}
-            <div>
-              <h2 className="text-2xl font-semibold mb-4 text-gray-800">User Grades vs {career} Predicted Grade</h2>
-              {generateCombinedChartData() && (
-                <Line
-                  data={generateCombinedChartData()}
-                  options={{
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        max: 4
-                      }
-                    }
-                  }}
-                />
-              )}
-            </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </>
   );
