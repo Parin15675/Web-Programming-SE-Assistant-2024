@@ -19,6 +19,7 @@ function Course_2() {
   const [career, setCareer] = useState("");
   const [field, setField] = useState("");
   const [name, setName] = useState("");
+  const [semester, setSemester] = useState(1); // Default to Semester 1
   const [gradeInfo, setGradeInfo] = useState({
     status: "",
     message: "",
@@ -59,7 +60,7 @@ function Course_2() {
         .get(
           `http://localhost:8000/api/user/schedules/${encodeURIComponent(
             profile.email
-          )}`
+          )}?semester=${semester}`
         )
         .then((res) => {
           if (res.data.curriculum.subjects.length === 0) {
@@ -75,6 +76,7 @@ function Course_2() {
           setField(res.data.user.field);
           setName(res.data.user.name);
           setIsReturningUser(true);
+          fetchCurriculum();
 
           const updatedRatings = {};
           res.data.curriculum.subjects.forEach((subject) => {
@@ -94,7 +96,7 @@ function Course_2() {
     } else {
       setIsLoading(false);
     }
-  }, [profile]);
+  }, [profile, semester]);
 
   const onTopicRatingChange = (subjectName, topicName, nextValue) => {
     setRatings((prevRatings) => ({
@@ -115,6 +117,42 @@ function Course_2() {
       })
       .catch((err) => {
         console.error("Error updating rating:", err);
+      });
+  };
+
+  useEffect(() => {
+    if (profile && profile.email) {
+      fetchCurriculum();
+    }
+  }, [semester]); // Trigger whenever the semester changes
+
+  const fetchCurriculum = () => {
+    setIsLoading(true);
+    axios
+      .get(
+        `http://localhost:8000/api/user/schedules/${encodeURIComponent(
+          profile.email
+        )}?semester=${semester}`
+      )
+      .then((res) => {
+        setCurriculum(res.data.curriculum || { subjects: [] });
+        setYear(res.data.user.year);
+        setCareer(res.data.user.career);
+        setField(res.data.user.field);
+
+        const updatedRatings = {};
+        res.data.curriculum?.subjects.forEach((subject) => {
+          updatedRatings[subject.name] = {};
+          (subject.topics || []).forEach((topic) => {
+            updatedRatings[subject.name][topic.name] = topic.rating || 0;
+          });
+        });
+        setRatings(updatedRatings);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching curriculum:", err);
+        setIsLoading(false);
       });
   };
 
@@ -512,6 +550,17 @@ function Course_2() {
                 <p>Year: {year}</p>
                 <p>Career: {career}</p>
                 <p>Field: {field}</p>
+                <label className="block text-gray-700 mt-4">
+                  Select Semester:
+                  <select
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                    value={semester}
+                    onChange={(e) => setSemester(Number(e.target.value))}
+                  >
+                    <option value={1}>Semester 1</option>
+                    <option value={2}>Semester 2</option>
+                  </select>
+                </label>
               </div>
               <div
                 className={`bg-white p-4 rounded shadow-md ${

@@ -1,11 +1,11 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Query, Form
+from fastapi import FastAPI, UploadFile, File, HTTPException, Query,Form
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from model import User
-from database import  fs,create_user, fetch_curriculum_by_year, initialize_curriculums, get_user_by_name, user_helper, users_collection, upload_pdf, get_pdf, fetch_books,save_user_schedules, get_user_schedules, holiday_collection
+from database import create_user, fetch_curriculum_by_year, initialize_curriculums, get_user_by_name, user_helper, users_collection, upload_pdf, get_pdf, fetch_books,save_user_schedules, get_user_schedules,curriculum_collection2, insert_holiday_data, holiday_collection, get_bucket_by_year
 import io  # Added for handling byte streams
 from googleapiclient.discovery import build
-from typing import List, Dict
+from typing import List, Dict, Optional
 import random  # Added to randomize career search terms
 import requests
 from pydantic import BaseModel, EmailStr
@@ -13,19 +13,20 @@ from bson import ObjectId
 import json
 
 
+
 app = FastAPI()
 
 # CORS Middleware to allow connections from the frontend (e.g., React app)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"], 
+    allow_origins=["http://localhost:3000"],  # Adjust this to match your frontend domain/IP
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Replace 'YOUR_YOUTUBE_API_KEY' with your actual YouTube Data API key
-YOUTUBE_API_KEY = 'AIzaSyDZJJ0q2rPDqIgzkHFCdfT85iVZar2guI0'
+YOUTUBE_API_KEY = 'AIzaSyAAT-UOa6xvN4tm0hiSTvFvyze909wHsv4'
 
 
 # @app.on_event("startup")
@@ -99,7 +100,6 @@ async def get_career_videos(gmail: str):
 
     return videos
 
-
 # API to search YouTube based on user query
 @app.get("/search", response_model=List[dict])
 def search(query: str = Query(..., description="Search term for YouTube")):
@@ -127,79 +127,181 @@ def get_video_details(video_ids: str = Query(..., description="Comma-separated l
     
     return details
 
-# Initialize curriculum when the server starts
-@app.on_event("startup")
-async def startup_event():
-    await initialize_curriculums()
-
 # API to create user and fetch curriculum by year
 @app.post("/api/user/")
 async def create_user_and_get_curriculum(user: User):
     user_data = await create_user(user)  # Save user to MongoDB
-    curriculum = await fetch_curriculum_by_year(user.year)  # Fetch curriculum for the selected year
-    if curriculum:
-        return {"user": user_data, "curriculum": curriculum}
-    raise HTTPException(404, f"No curriculum found for year {user.year}")
+    await initialize_curriculums(user.gmail)
+    # curriculum = await fetch_curriculum_by_year(user.year, user.gmail)  # Fetch curriculum for the selected year
+    # if curriculum:  
+    #     return {"user": user_data, "curriculum": curriculum}
 
-# API to fetch user and curriculum by Gmail
-@app.get("/api/user/{gmail}")
-async def get_user_by_gmail(gmail: str):
+    # raise HTTPException(404, f"No curriculum found for year {user.year}")
+    return {"user": user_data}
+
+def curriculum_helper(curriculum):
+    """
+    Transforms a raw curriculum document from the database into a structured dictionary
+    that matches the specified format.
+    """
+    return {
+        "year": curriculum.get("year"),
+        "semester": curriculum.get("semester"),
+        "gmail": curriculum.get("gmail"),
+        "subjects": [
+            {
+                "name": subject.get("name"),
+                "description": subject.get("description"),
+                "topics": [
+                    {"name": topic.get("name"), "rating": topic.get("rating", 0)}
+                    for topic in subject.get("topics", [])
+                ],
+            }
+            for subject in curriculum.get("subjects", [])
+        ],
+    }
+
+async def fetch_curriculum_by_year_and_semester(year, semester, gmail):
+    print(f"Fetching year: {year}, semester: {semester}, gmail: {gmail}")  # Debug log
+    curriculum = await curriculum_collection2.find_one({"year": year, "semester": semester, "gmail": gmail})
+    if curriculum:
+        print(f"Curriculum found: {curriculum}")  # Debug log
+        return curriculum_helper(curriculum)
+    print("No curriculum found for given semester.")  # Debug log
+    return {"subjects": []}
+
+    
+# API to fetch user and curriculum by Gmail and optional semester
+@app.get("/api/user/schedules/{gmail}")
+async def get_user_by_gmail(gmail: str, semester: int = Query(None)):
     user = await users_collection.find_one({"gmail": gmail})
     if user:
-        curriculum = await fetch_curriculum_by_year(user['year'])
+        # If semester is provided, fetch specific semester curriculum
+        if semester:
+            curriculum = await fetch_curriculum_by_year_and_semester(user['year'], semester, user['gmail'])
+        else:
+            # If no semester is provided, return all semesters or a default
+            curriculum = await fetch_curriculum_by_year_and_semester(user['year'], 1, user['gmail'])  # Default to semester 1
+
         user_data = user_helper(user)
-
-        # If schedules are not set, initialize as an empty dictionary
-        if not user_data.get("schedules"):
-            user_data["schedules"] = {}
-
         return {"user": user_data, "curriculum": curriculum}
     raise HTTPException(404, f"User {gmail} not found")
 
+class SimplifiedUser(BaseModel):
+    name: Optional[str] = None
+    gmail: Optional[EmailStr] = None
+    year: Optional[int] = None
+    career: Optional[str] = None
+    field: Optional[str] = None
 
-# API for uploading PDFs to MongoDB
-@app.post("/upload-book/")
-async def upload_book(file: UploadFile = File(...)):
-    if file.content_type != "application/pdf":
-        raise HTTPException(status_code=400, detail="File must be a PDF")
-    
-    file_data = await file.read()  # Read file as bytes
-    pdf_id = await upload_pdf(file_data, file.filename)  # Save in MongoDB GridFS
-    return {"pdf_id": pdf_id}
-
-# API for downloading PDF from MongoDB
-@app.get("/books/{pdf_id}")
-async def download_book(pdf_id: str):
-    file_data = await get_pdf(pdf_id)  # Retrieve file from GridFS
-    if not file_data:
-        raise HTTPException(404, detail="PDF not found")
-    
-    return StreamingResponse(io.BytesIO(file_data), media_type="application/pdf")
-
-# API for downloading MP4 from MongoDB
-@app.get("/videos/{file_id}")
-async def download_mp4(file_id: str):
+@app.get("/api/user/{gmail}", response_model=SimplifiedUser)
+async def get_user_by_gmail(gmail: str):
+    """
+    Fetch user information by Gmail from the database.
+    Args:
+        gmail (str): User's Gmail address.
+    Returns:
+        SimplifiedUser: User data including name, gmail, year, career, and field.
+    """
     try:
-        # Retrieve file data from GridFS
-        file_data = await get_pdf(file_id)  # Reuse the same helper function to fetch the file
-        if not file_data:
-            raise HTTPException(status_code=404, detail="MP4 file not found")
-        
-        # Return the MP4 file as a StreamingResponse
-        return StreamingResponse(
-            io.BytesIO(file_data),
-            media_type="video/mp4",
-            headers={"Content-Disposition": f"inline; filename={file_id}.mp4"}
-        )
+        # Use `await` with `find_one` for proper async handling
+        user = await users_collection.find_one({"gmail": gmail})
+        if not user:
+            raise HTTPException(status_code=404, detail=f"User with email {gmail} not found")
+
+        # Prepare the response data
+        user_data = {
+            "name": user.get("name", "Unknown"),
+            "gmail": user.get("gmail", "Unknown"),
+            "year": user.get("year", None),
+            "career": user.get("career", None),
+            "field": user.get("field", None),  # Include the field property
+        }
+
+        return SimplifiedUser(**user_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+@app.put("/api/user/{gmail}")
+async def update_user(gmail: str, user_data: SimplifiedUser):
+    """
+    Updates user details in the database.
+    """
+    print(f"Incoming data for {gmail}: {user_data}")
+    try:
+        # Convert the user data to a dictionary and exclude unset fields
+        updated_data = user_data.dict(exclude_unset=True)
+
+        if not updated_data:
+            raise HTTPException(status_code=400, detail="No fields provided to update")
+
+        # Update user data in MongoDB
+        result = await users_collection.update_one({"gmail": gmail}, {"$set": updated_data})
+
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="User not found or no changes made")
+
+        return {"message": "User updated successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
 
 
-# API for listing available books (PDFs)
-@app.get("/api/books/")
-async def list_books():
-    files = await fetch_books()  # Fetch the list of PDF files from MongoDB
-    return files
+
+
+
+# API for uploading PDFs to MongoDB
+@app.post("/upload-book/")
+async def upload_book(file: UploadFile = File(...), year: int = Query(...)):
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="File must be a PDF")
+    
+    # Get the corresponding GridFS bucket for the year
+    fs = get_bucket_by_year(year)
+    if not fs:
+        raise HTTPException(status_code=400, detail="Invalid year")
+
+    file_data = await file.read()  # Read file as bytes
+    metadata = {"filename": file.filename, "year": year}
+    pdf_id = await fs.upload_from_stream(file.filename, file_data, metadata=metadata)  # Save in MongoDB GridFS
+    return {"pdf_id": str(pdf_id)}
+
+@app.get("/books/{year}")
+async def list_books(year: int):
+    # Get the corresponding GridFS bucket for the year
+    fs = get_bucket_by_year(year)
+    if not fs:
+        raise HTTPException(status_code=400, detail="Invalid year")
+
+    # Retrieve the list of files in the bucket
+    try:
+        files = fs.find()  # Get a cursor to all files in the bucket
+        files_list = await files.to_list(None)  # Convert cursor to a list
+        return [
+            {
+                "id": str(file["_id"]),
+                "filename": file["metadata"]["filename"],
+            }
+            for file in files_list
+        ]
+    except Exception:
+        raise HTTPException(500, detail="Failed to retrieve files")
+
+@app.get("/books/{year}/{pdf_id}")
+async def download_book(year: int, pdf_id: str):
+    # Get the corresponding GridFS bucket for the year
+    fs = get_bucket_by_year(year)
+    if not fs:
+        raise HTTPException(status_code=400, detail="Invalid year")
+    
+    try:
+        # Convert pdf_id to ObjectId and fetch the file from GridFS
+        file_data = await fs.open_download_stream(ObjectId(pdf_id))
+        file_bytes = await file_data.read()
+    except Exception:
+        raise HTTPException(404, detail="PDF not found")
+    
+    return StreamingResponse(io.BytesIO(file_bytes), media_type="application/pdf")
+
 
 # Replace with your actual NewsAPI key
 NEWS_API_KEY = 'ab40d7c1ff0c460d9e761c713881a3f8'
@@ -269,37 +371,55 @@ def get_news(query: str = Query(...)):
 class RatingRequest(BaseModel):
     gmail: EmailStr
     subject: str
+    topic: str  # ต้องมี attribute topic
     rating: int
 
 @app.post("/api/user/rating")
 async def rate_subject(request: RatingRequest):
-    # Allow rating to be between 1 and 10, or -1 for reset
-    if (request.rating < 1 or request.rating > 10) and request.rating != -1:
-        raise HTTPException(status_code=400, detail="Rating must be between 1 and 10, or -1 to reset")
-    
-    # Find the user in the database
-    user = await users_collection.find_one({"gmail": request.gmail})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Initialize ratings if not present
-    if "ratings" not in user:
-        user["ratings"] = {}
+    try:
+        print("Received rating request:", request)
 
-    # Handle reset case (-1 sets the rating to null)
-    if request.rating == -1:
-        user["ratings"][request.subject] = None  # or you can use `del user["ratings"][request.subject]` to remove it entirely
-    else:
-        user["ratings"][request.subject] = request.rating
+        # Find the document where this user has the specified subject and topic
+        user = await curriculum_collection2.find_one({
+            "gmail": request.gmail,
+            "subjects": {
+                "$elemMatch": {
+                    "name": request.subject,
+                    "topics.name": request.topic
+                }
+            }
+        })
 
-    # Update the user's ratings in the database
-    await users_collection.update_one(
-        {"_id": user["_id"]},
-        {"$set": {"ratings": user["ratings"]}}
-    )
+        if not user:
+            raise HTTPException(status_code=404, detail="User or subject not found")
 
-    return {"message": "Rating updated successfully"}
-  
+        # Update the rating for the specific subject and topic
+        result = await curriculum_collection2.update_one(
+            {
+                "_id": user["_id"],
+                "subjects.name": request.subject,
+                "subjects.topics.name": request.topic
+            },
+            {
+                "$set": {
+                    "subjects.$[subject].topics.$[topic].rating": request.rating
+                }
+            },
+            array_filters=[
+                {"subject.name": request.subject},
+                {"topic.name": request.topic}
+            ]
+        )
+
+        if result.modified_count == 0:
+            raise HTTPException(status_code=500, detail="Failed to update rating in database")
+
+        print("Updated ratings successfully")
+        return {"message": "Rating updated successfully"}
+        
+    except Exception as e:
+        print(f"Error in rate_subject: {e}")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred") 
 
 # Schedule model definition
 class Schedule(BaseModel):
@@ -344,7 +464,6 @@ async def save_schedules(
         return {"message": "Schedules saved successfully!"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-
 # API to fetch user schedules
 @app.get("/get_schedules/{gmail}")
 async def get_schedules(gmail: str):
@@ -395,6 +514,7 @@ async def delete_schedule(gmail: str, day: str, start_minute: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {e}")
 
+
 @app.get("/api/public_holidays/")
 async def get_public_holidays():
     """
@@ -414,4 +534,6 @@ async def get_public_holidays():
         raise HTTPException(status_code=500, detail=f"An error occurred while fetching holidays: {str(e)}")
 
 
-
+# @app.on_event("startup")
+# async def startup_event():
+#     await insert_holiday_data()

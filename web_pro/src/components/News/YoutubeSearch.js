@@ -20,6 +20,7 @@ const YoutubeSearch = () => {
             // Fetch user's career interest and search videos based on it
             axios.get(`http://localhost:8000/career_videos?gmail=${profile.email}`)
                 .then(response => {
+                    console.log(response.data)
                     setVideos(response.data);
                     setIsLoading(false); // Stop loading once videos are fetched
                 })
