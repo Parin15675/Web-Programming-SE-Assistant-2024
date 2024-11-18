@@ -26,7 +26,7 @@ app.add_middleware(
 )
 
 # Replace 'YOUR_YOUTUBE_API_KEY' with your actual YouTube Data API key
-YOUTUBE_API_KEY = 'AIzaSyAAT-UOa6xvN4tm0hiSTvFvyze909wHsv4'
+YOUTUBE_API_KEY = 'AIzaSyAbSZ8_8guAb0mePBBF-24baUJtyeHaabQ'
 
 
 # @app.on_event("startup")
@@ -304,7 +304,7 @@ async def download_book(year: int, pdf_id: str):
 
 
 # Replace with your actual NewsAPI key
-NEWS_API_KEY = 'ab40d7c1ff0c460d9e761c713881a3f8'
+NEWS_API_KEY = 'f573033188a041a898274d18703287cf'
 
 def fetch_news(query: str):
     url = f"https://newsapi.org/v2/everything?q={query}&apiKey={NEWS_API_KEY}"
