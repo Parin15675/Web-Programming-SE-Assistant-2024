@@ -543,10 +543,8 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                                 style={{
                                     backgroundColor: '#ff9800',
                                     padding: '5px',
-                                    borderRadius: '5px',
-                                    fontSize: '14px',
-                                    marginBottom: '10px',
-                                    color: 'white',
+                                    fontSize: '14px',                                
+                                    color: 'black',
                                     textAlign: 'center',
                                 }}
                             >
