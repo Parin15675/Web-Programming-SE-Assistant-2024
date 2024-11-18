@@ -171,7 +171,6 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
         }
     
         setSchedules(newSchedules);
-        console.log(dayKey); // This should now log the correct date
     
         // Save to backend
         axios.post('http://localhost:8000/save_schedules/', {
