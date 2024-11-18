@@ -33,7 +33,6 @@ const YoutubeSearch = () => {
     }, [profile]);
 
     const handleSelectVideo = (video) => {
-        console.log(video)
         setSelectedVideo(video);
         setIsModalOpen(true);
     };
