@@ -90,32 +90,24 @@ const StaticMonthCalendar = ({ linkTo = "/details", email }) => {
                         const holiday = day ? isPublicHoliday(resetTimeToMidnight(day)) : null;
 
                         return (
-                            <div key={index} className="calendar-day-month-static">
+                            <div
+                                key={index}
+                                className="calendar-day-month-static"
+                                style={{
+                                    backgroundColor: holiday ? "#ffe0b2" : "transparent", // Highlight full container for holidays
+                                    borderRadius: "5px", // Optional for rounded corners
+                                }}
+                            >
                                 {day ? (
                                     <div
-                                        className={`calendar-day-number ${
-                                            holiday ? "calendar-day-holiday" : ""
-                                        }`}
+                                        className="calendar-day-number"
                                         style={{
                                             cursor: "pointer",
                                             color: holiday ? "#ff9800" : "black",
-                                            backgroundColor: holiday ? "#ffe0b2" : "transparent",
                                         }}
                                     >
                                         {day.getDate()}
-                                        
-                                        {/* Display Holiday */}
-                                        {holiday && (
-                                            <div
-                                                style={{
-                                                    maxHeight: "5px",
-                                                    backgroundColor: "#ff9800",
-                                                    borderRadius: "3px",
-                                                    fontSize: "2px",
-                                                }}
-                                            >
-                                            </div>
-                                        )}
+
 
                                         {/* Display Events */}
                                         <div className="calendar-day-events">
@@ -141,7 +133,7 @@ const StaticMonthCalendar = ({ linkTo = "/details", email }) => {
                                                                 borderRadius: "3px",
                                                             }}
                                                         >
-                                                            {event.title}
+                                                            <div className="month-event-title">{event.title}</div>
                                                         </div>
                                                     ))}
                                         </div>
@@ -153,6 +145,7 @@ const StaticMonthCalendar = ({ linkTo = "/details", email }) => {
                         );
                     })}
                 </div>
+
             </div>
         </Link>
     );

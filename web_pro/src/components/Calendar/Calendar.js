@@ -617,7 +617,14 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                 ) : (
                     <div className="calendar-body-month">
                         {currentMonth.map((day, index) => (
-                            <div key={index} className="calendar-day-month">
+                            <div
+                                key={index}
+                                className="calendar-day-month"
+                                style={{
+                                    backgroundColor: day && isPublicHoliday(resetTimeToMidnight(day)) ? '#ffe0b2' : 'transparent', // Highlight the entire day container
+                                    borderRadius: '5px', // Optional for rounded corners
+                                }}
+                            >
                                 {day ? (
                                     <div
                                         className={`calendar-day-number ${isPublicHoliday(resetTimeToMidnight(day)) ? "calendar-day-holiday" : ""}`}
@@ -665,7 +672,7 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                                                         whiteSpace: 'nowrap',
                                                     }}
                                                 >
-                                                    {event.title}
+                                                    <div className="month-event-title">{event.title}</div>
                                                 </div>
                                             ))}
                                         </div>
@@ -770,9 +777,13 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
             {isCalendarModalOpen && selectedVideo && (
                 <CalendarYoutubeModal
                     video={selectedVideo}
-                    onClose={() => setIsCalendarModalOpen(false)}
+                    onClose={() => {
+                        setIsCalendarModalOpen(false);
+                        window.location.reload(); // Refresh the page when the modal closes
+                    }}
                 />
             )}
+
 
             {showAddVideoButton && (
                 <button onClick={() => setIsVideoTypeModalOpen(true)}>Add Video</button>
