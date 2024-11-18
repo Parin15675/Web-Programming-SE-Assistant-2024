@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux'; // Import useSelector to access Redux store
 import axios from 'axios';
+import './CalendarNotification.css'; // Import the CSS file for styling
 
 const CalendarNotification = () => {
     const [message, setMessage] = useState('');
     const [schedules, setSchedules] = useState([]);
-    
+
     // Get profile (including Gmail) from Redux  
     const profile = useSelector((state) => state.profile);
-    
+
     // Function to get today's date in the format 'YYYY-MM-DD'
     const getCurrentDate = () => {
         const today = new Date();
@@ -31,7 +32,15 @@ const CalendarNotification = () => {
                     if (fetchedSchedules[today]) {
                         // Convert the object to an array of schedule events
                         const eventsArray = Object.values(fetchedSchedules[today]);
-                        setSchedules(eventsArray);
+
+                        // Filter unique events by their title and details to avoid showing duplicates
+                        const uniqueEvents = eventsArray.filter((event, index, self) =>
+                            index === self.findIndex((e) => (
+                                e.title === event.title && e.details === event.details
+                            ))
+                        );
+
+                        setSchedules(uniqueEvents);
                         setMessage('You have events for today.');
                     } else {
                         setMessage('No events for today.');
@@ -49,16 +58,18 @@ const CalendarNotification = () => {
     }, [profile]);
 
     return (
-        <div>
+        <div className="calendar-notification-box">
             {message ? (
                 <div>
                     <h1>{message}</h1>
                     {schedules && schedules.length > 0 ? (
                         <ul>
-                            {/* Only display the first event */}
-                            <li>
-                                <strong>{schedules[0].title}</strong> - {schedules[0].details}
-                            </li>
+                            {/* Display each unique event */}
+                            {schedules.map((event, index) => (
+                                <li key={index}>
+                                    <strong>{event.title}</strong> - {event.details}
+                                </li>
+                            ))}
                         </ul>
                     ) : (
                         <h1>No events for today.</h1>

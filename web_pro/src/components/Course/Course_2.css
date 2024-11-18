@@ -6,6 +6,8 @@
   margin-top: 20px;
 }
 
+
+
 .subject-box {
   background-color: #ff9f0e;
   border: 1px solid #ccc;
@@ -34,11 +36,13 @@
 
 .popup-content {
   text-align: left;
+  color: black;
 }
 
 .popup button {
   margin-top: 10px;
   display: block;
+  color: black;
 }
 
 /* Content container for layout */
@@ -83,4 +87,5 @@
   .popup {
     width: 90%;  /* Adjust popup width for small screens */
   }
+
 }

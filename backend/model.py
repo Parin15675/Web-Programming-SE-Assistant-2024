@@ -14,4 +14,5 @@ class User(BaseModel):
     gmail: EmailStr
     year: int
     career: str
+    field: Optional[str] = None  # Add the field property
     schedules: Optional[Dict[str, Dict[int, Schedule]]] = None  # Store schedules per day as minute keys
