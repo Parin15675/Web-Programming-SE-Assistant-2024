@@ -17,7 +17,7 @@ import YoutubeSearch from './components/News/YoutubeSearch';
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Home />
+    element: <Profile />
   },
   {
     path: "schedule",
@@ -40,8 +40,8 @@ const router = createBrowserRouter([
     element: <Login />
   },
   {
-    path: "profile",
-    element: <Profile />
+    path: "home",
+    element: <Home />
   },
   {
     path:"/course/:subjectName",

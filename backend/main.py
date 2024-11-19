@@ -1,8 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Query,Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
-from model import User
-from database import create_user, fetch_curriculum_by_year, initialize_curriculums, get_user_by_name, user_helper, users_collection, upload_pdf, get_pdf, fetch_books,save_user_schedules, get_user_schedules,curriculum_collection2, insert_holiday_data, holiday_collection, get_bucket_by_year
+from model import User,TargetGPARequest
+from database import create_user, fetch_curriculum_by_year, initialize_curriculums, get_user_by_name, user_helper, users_collection, upload_pdf, get_pdf, fetch_books,save_user_schedules, get_user_schedules,curriculum_collection2, insert_holiday_data, holiday_collection, get_bucket_by_year,target_gpaDB
 import io  # Added for handling byte streams
 from googleapiclient.discovery import build
 from typing import List, Dict, Optional
@@ -26,7 +26,7 @@ app.add_middleware(
 )
 
 # Replace 'YOUR_YOUTUBE_API_KEY' with your actual YouTube Data API key
-YOUTUBE_API_KEY = 'AIzaSyAbSZ8_8guAb0mePBBF-24baUJtyeHaabQ'
+YOUTUBE_API_KEY = 'AIzaSyAXT5DHpcfY65UVXLxsUN3k05Ja-HVH9WM'
 
 
 # @app.on_event("startup")
@@ -152,6 +152,8 @@ def curriculum_helper(curriculum):
             {
                 "name": subject.get("name"),
                 "description": subject.get("description"),
+                "credit": subject.get("credit"),
+                "field": subject.get("field"),
                 "topics": [
                     {"name": topic.get("name"), "rating": topic.get("rating", 0)}
                     for topic in subject.get("topics", [])
@@ -162,12 +164,35 @@ def curriculum_helper(curriculum):
     }
 
 async def fetch_curriculum_by_year_and_semester(year, semester, gmail):
-    print(f"Fetching year: {year}, semester: {semester}, gmail: {gmail}")  # Debug log
-    curriculum = await curriculum_collection2.find_one({"year": year, "semester": semester, "gmail": gmail})
+    print(f"Fetching curriculum for year: {year}, semester: {semester}, gmail: {gmail}")  # Debug log
+
+    # Fetch user details to get the field of interest
+    user = await users_collection.find_one({"gmail": gmail})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    field = user.get("field")  # Fetch user's field of interest
+    query = {"year": year, "semester": semester, "gmail": gmail}
+
+    # If the user is in Year 3, filter curriculum by field and "For All"
+    if year == 3 and field:
+        query["subjects"] = {
+            "$elemMatch": {"field": {"$in": [field, "For All"]}}
+        }
+
+    curriculum = await curriculum_collection2.find_one(query)
     if curriculum:
         print(f"Curriculum found: {curriculum}")  # Debug log
+        
+        # Filter subjects to only include relevant ones for the field or "For All"
+        filtered_subjects = [
+            subject for subject in curriculum.get("subjects", [])
+            if subject.get("field", "For All") in [field, "For All"]
+        ]
+        curriculum["subjects"] = filtered_subjects
         return curriculum_helper(curriculum)
-    print("No curriculum found for given semester.")  # Debug log
+
+    print("No curriculum found for the given criteria.")  # Debug log
     return {"subjects": []}
 
     
@@ -186,6 +211,7 @@ async def get_user_by_gmail(gmail: str, semester: int = Query(None)):
         user_data = user_helper(user)
         return {"user": user_data, "curriculum": curriculum}
     raise HTTPException(404, f"User {gmail} not found")
+
 
 class SimplifiedUser(BaseModel):
     name: Optional[str] = None
@@ -537,3 +563,82 @@ async def get_public_holidays():
 # @app.on_event("startup")
 # async def startup_event():
 #     await insert_holiday_data()
+
+class ResetRatingRequest(BaseModel):
+    gmail: EmailStr
+    subject: str
+
+
+class ResetRatingRequest(BaseModel):
+    gmail: str
+    subject: str
+
+@app.post("/api/user/reset-rating")
+async def reset_rating(request: ResetRatingRequest):
+    try:
+        # Find the user's curriculum for the specific subject
+        user_curriculum = await curriculum_collection2.find_one({
+            "gmail": request.gmail,
+            "subjects.name": request.subject
+        })
+
+        if not user_curriculum:
+            raise HTTPException(status_code=404, detail="Subject not found for user")
+
+        # Update all topics in the subject to reset the ratings
+        result = await curriculum_collection2.update_one(
+            {
+                "_id": user_curriculum["_id"],
+                "subjects.name": request.subject
+            },
+            {
+                "$set": {
+                    "subjects.$.topics.$[].rating": -1  # Reset all topic ratings to -1
+                }
+            }
+        )
+
+        if result.modified_count == 0:
+            raise HTTPException(status_code=500, detail="Failed to reset ratings")
+
+        return {"message": "Ratings reset successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/api/user/target_gpa/")
+async def set_target_gpa(data: TargetGPARequest):
+    if not (0 <= data.target_gpa <= 4):
+        raise HTTPException(status_code=400, detail="Target GPA must be between 0 and 4.")
+    
+    # ใช้ await กับ find_one เพื่อดึงข้อมูล
+    existing_user = await target_gpaDB.find_one({"gmail": data.gmail})
+
+    if existing_user:
+        # อัปเดต `target_gpa` ถ้าพบผู้ใช้งาน
+        result = await target_gpaDB.update_one(
+            {"gmail": data.gmail},
+            {"$set": {"target_gpa": data.target_gpa}}
+        )
+        if result.modified_count > 0:
+            print(f"Updated target_gpa for {data.gmail}")
+    else:
+        # สร้างเอกสารใหม่ถ้าไม่พบผู้ใช้งาน
+        result = await target_gpaDB.insert_one({"gmail": data.gmail, "target_gpa": data.target_gpa})
+        if result.inserted_id:
+            print(f"Inserted new document for {data.gmail}")
+
+    return {"message": "Target GPA saved successfully!", "gmail": data.gmail, "target_gpa": data.target_gpa}
+
+
+@app.get("/api/user/target_gpa/{gmail}")
+async def get_target_gpa(gmail: str):
+    # ค้นหาเอกสารใน MongoDB ที่มี gmail ตรงกัน
+    user = await target_gpaDB.find_one({"gmail": gmail})
+    
+    if not user:
+        # หากไม่พบ ให้ส่ง HTTP 404 กลับ
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    # ส่งข้อมูลกลับ
+    return {"gmail": user["gmail"], "target_gpa": user["target_gpa"]}
+    

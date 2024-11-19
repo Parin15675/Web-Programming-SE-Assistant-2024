@@ -41,7 +41,7 @@ const Nav = () => {
   }, [lastScrollY]);
 
   return (
-    <div className={`w-full py-8 flex items-center justify-between bg-gradient-to-br from-blue-900 to-purple-700 shadow-lg border-b-2 border-black/10 fixed top-0 left-0 right-0 z-50 transition-transform duration-700 ease-in-out ${showNavbar ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'}`}>
+    <div className={`w-full py-8 flex items-center justify-between bg-customBlue text-white p-6 shadow-lg border-b-2 border-black/10 fixed top-0 left-0 right-0 z-50 transition-transform duration-700 ease-in-out ${showNavbar ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'}`}>
       {/* Flex container for logo and text */}
       <div className="flex items-center">
         {/* Logo */}
@@ -51,7 +51,7 @@ const Nav = () => {
       </div>
       <ul className="list-none flex m-0">
         <li className="mx-5 relative">
-          <NavLink exact to="/" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4 bg-white/10 rounded-xl transition-all duration-500 ease-in-out hover:text-teal-400 hover:bg-white/20 shadow-sm">Home</NavLink>
+          <NavLink exact to="/home" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4 bg-white/10 rounded-xl transition-all duration-500 ease-in-out hover:text-teal-400 hover:bg-white/20 shadow-sm">Home</NavLink>
         </li>
         <li className="mx-5 relative">
           <NavLink to="/course" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4 bg-white/10 rounded-xl transition-all duration-500 ease-in-out hover:text-teal-400 hover:bg-white/20 shadow-sm">Course</NavLink>
@@ -67,7 +67,7 @@ const Nav = () => {
         </li>
         <li className="mx-5 relative">
           {profile ? (
-            <NavLink to="/profile" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4 bg-white/10 rounded-xl transition-all duration-500 ease-in-out hover:text-teal-400 hover:bg-white/20 shadow-sm">
+            <NavLink to="/" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4 bg-white/10 rounded-xl transition-all duration-500 ease-in-out hover:text-teal-400 hover:bg-white/20 shadow-sm">
               {profile.name}
             </NavLink>
           ) : (

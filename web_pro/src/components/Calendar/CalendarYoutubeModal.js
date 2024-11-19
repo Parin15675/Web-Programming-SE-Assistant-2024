@@ -97,7 +97,7 @@ const CalendarYoutubeModal = ({ video, onClose }) => {
                         videoFile={video.id.file || null} // Pass MP4 file reference to Calendar
                     />
                 </div>
-                <button className="cancel-button" onClick={onClose}>Cancel</button>
+                <button className="cancel-button" onClick={onClose}>Close</button>
             </div>
         </div>
     );

@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import StarRatingComponent from "react-star-rating-component";
 import { Line, Bar } from "react-chartjs-2";
 import "chart.js/auto";
+import YoutubeSearch from "../Calendar/YoutubeSearch";
 
 function Course_2() {
   const [curriculum, setCurriculum] = useState({
@@ -12,6 +13,8 @@ function Course_2() {
   });
 
   const [selectedSubject, setSelectedSubject] = useState(null);
+  const [gpaError, setGpaError] = useState(""); // State for GPA input error
+  const [targetGpa, setTargetGpa] = useState(3.5);
   const [ratings, setRatings] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isReturningUser, setIsReturningUser] = useState(false);
@@ -29,18 +32,31 @@ function Course_2() {
   const profile = useSelector((state) => state.profile);
 
   const gradeRequirements = {
-    Metaverse: { "Database Systems": 2.0 },
-    "Data Analysis": { Statistics: 2.5, "Machine Learning": 3.0 },
-    IoT: { Networking: 2.5, "Embedded Systems": 3.0 },
-    AI: { "Deep Learning": 3.5, "Neural Networks": 3.5 },
+    Metaverse: {
+      "Database Systems": 2.0,
+      "Software Engineering Principles": 3.0,
+    },
+    IoT: {
+      "Computer Networks": 2.5,
+      "Computer Architecture and Organization": 3.0,
+    },
+    AI: {
+      "Introduction to Logic": 3.5,
+      "Probability Models and Data Analysis": 3.5,
+    },
   };
 
-  const targetGPA = {
-    Metaverse: 3.0,
-    "Data Analysis": 3.5,
-    IoT: 3.2,
-    AI: 3.5,
+  const gradeToLetter = (grade) => {
+    if (grade >= 4.0) return "A";
+    if (grade >= 3.5) return "B+";
+    if (grade >= 3.0) return "B";
+    if (grade >= 2.5) return "C+";
+    if (grade >= 2.0) return "C";
+    if (grade >= 1.5) return "D+";
+    if (grade >= 1.0) return "D";
+    return "F";
   };
+  
 
   const starToGrade = (stars) => {
     if (stars === 10) return 4.0;
@@ -121,10 +137,29 @@ function Course_2() {
   };
 
   useEffect(() => {
-    if (profile && profile.email) {
+    if (profile && profile.email && !isReturningUser) {
       fetchCurriculum();
     }
   }, [semester]); // Trigger whenever the semester changes
+
+  useEffect(() => {
+    if (profile && profile.email) {
+      // Fetch the current targetGpa from the backend
+      axios
+        .get(
+          `http://localhost:8000/api/user/target_gpa/${encodeURIComponent(
+            profile.email
+          )}`
+        )
+        .then((res) => {
+          setTargetGpa(res.data.target_gpa || 3.5); // Update targetGpa from backend
+        })
+        .catch((err) => {
+          console.error("Error fetching target GPA:", err);
+          // Default value remains 3.5 if API fails
+        });
+    }
+  }, [profile]);
 
   const fetchCurriculum = () => {
     setIsLoading(true);
@@ -135,7 +170,7 @@ function Course_2() {
         )}?semester=${semester}`
       )
       .then((res) => {
-        setCurriculum(res.data.curriculum || { subjects: [] });
+        setCurriculum(res.data.curriculum || { subjects: [] }); // Credits will already be part of this
         setYear(res.data.user.year);
         setCareer(res.data.user.career);
         setField(res.data.user.field);
@@ -159,33 +194,48 @@ function Course_2() {
   const calculatePredictedGrades = () => {
     const averageGrades = calculateAverageGrades();
     const currentSum = averageGrades.reduce(
-      (sum, grade) => sum + (grade > 0 ? grade : 0),
+      (sum, grade) => sum + (grade > 0 ? grade : 0), // Include only valid grades
       0
-    ); // Sum only rated grades
+    );
+
     const ratedSubjects = averageGrades.filter((grade) => grade > 0).length;
     const remainingSubjects = curriculum.subjects.length - ratedSubjects;
-    const requiredGPA = targetGPA[field] || 3.0;
 
-    if (remainingSubjects === 0) return averageGrades; // If all subjects are rated, no prediction is needed
+    // Use the user-defined targetGpa
+    const requiredGPA = targetGpa;
 
+    if (remainingSubjects === 0) {
+      // If all subjects are rated, return actual grades
+      return averageGrades;
+    }
+
+    // Calculate the average grade required for unrated subjects
     const remainingRequiredGrade =
       (requiredGPA * curriculum.subjects.length - currentSum) /
       remainingSubjects;
 
-    // Build predicted grades: Use rated grades and predict for unrated subjects
+    // Ensure the required grade is valid (0 to 4)
+    const isFeasible =
+      remainingRequiredGrade <= 4 && remainingRequiredGrade >= 0;
+
     return curriculum.subjects.map((_, index) => {
-      return averageGrades[index] > 0 // Use current grade for rated subjects
-        ? averageGrades[index]
-        : remainingRequiredGrade <= 4 && remainingRequiredGrade >= 0 // Predict only if valid
-        ? remainingRequiredGrade
-        : null; // If prediction is invalid or not needed, leave as null
+      if (averageGrades[index] > 0) {
+        // Use actual grade for rated subjects
+        return averageGrades[index];
+      } else if (isFeasible) {
+        // Use predicted grade for unrated subjects
+        return remainingRequiredGrade;
+      } else {
+        // If not feasible, leave as null
+        return null;
+      }
     });
   };
 
   const calculateAverageGrades = () => {
     return curriculum.subjects.map((subject) => {
       const topicRatings = Object.values(ratings[subject.name] || {}).filter(
-        (rating) => rating !== -1
+        (rating) => rating > 0 // Only consider rated topics
       );
       const total = topicRatings.reduce(
         (sum, rating) => sum + starToGrade(rating),
@@ -205,74 +255,76 @@ function Course_2() {
     );
   };
 
-  const renderProgressBar = (percent) => (
-    <div className="w-full bg-gray-300 rounded-full h-4 mt-2">
-      <div
-        className="bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 h-4 rounded-full transition-all duration-500 ease-in-out"
-        style={{ width: `${percent}%` }}
-      ></div>
-    </div>
-  );
-
   const calculateProgress = (subject) => {
-    const totalTopics = subject.topics.length;
+    const totalTopics = subject.topics.length || 0; // Ensure topics length is not undefined
+    if (totalTopics === 0) {
+      return 0; // No topics = 0% progress
+    }
     const ratedTopics = Object.values(ratings[subject.name] || {}).filter(
-      (rating) => rating !== -1
+      (rating) => rating > 0 // Only count positive ratings
     ).length;
     return Math.round((ratedTopics / totalTopics) * 100);
   };
 
-  const calculateGradeInfo = () => {
-    const fullyRatedSubjects = getFullyRatedSubjects(); // Only fully rated subjects
-    const currentSum = fullyRatedSubjects.reduce((sum, subject) => {
-      const topicRatings = Object.values(ratings[subject.name] || {}).filter(
-        (rating) => rating !== -1
-      );
-      const total = topicRatings.reduce(
-        (sum, rating) => sum + starToGrade(rating),
-        0
-      );
-      return sum + (topicRatings.length > 0 ? total / topicRatings.length : 0);
-    }, 0);
+  const calculateGPA = () => {
+    let totalWeightedGrade = 0;
+    let totalCredits = 0;
 
-    const ratedSubjects = fullyRatedSubjects.length;
+    curriculum.subjects.forEach((subject) => {
+      const topicRatings = Object.values(ratings[subject.name] || {}).filter(
+        (rating) => rating > 0 // Only consider rated topics
+      );
+
+      if (topicRatings.length > 0) {
+        const averageGrade =
+          topicRatings.reduce((sum, rating) => sum + starToGrade(rating), 0) /
+          topicRatings.length;
+
+        totalWeightedGrade += averageGrade * subject.credit; // Weighted by credits
+        totalCredits += subject.credit;
+      }
+    });
+
+    const gpa =
+      totalCredits > 0
+        ? (totalWeightedGrade / totalCredits).toFixed(2)
+        : "0.00";
+
+    console.log("Calculated GPA:", gpa);
+    console.log("Ratings Structure:", ratings);
+    curriculum.subjects.forEach((subject) => {
+      const topicRatings = Object.values(ratings[subject.name] || {}).filter(
+        (rating) => rating > 0
+      );
+      console.log(`Subject: ${subject.name}`);
+      console.log(`Topic Ratings: ${topicRatings}`);
+      console.log(`Subject Credit: ${subject.credit}`);
+    });
+
+    return gpa;
+  };
+
+  const calculateGradeInfo = (updatedTargetGpa) => {
+    const averageGrades = calculateAverageGrades();
+    const currentSum = averageGrades.reduce(
+      (sum, grade) => sum + (grade > 0 ? grade : 0), // Include only rated grades
+      0
+    );
+
+    const ratedSubjects = averageGrades.filter((grade) => grade > 0).length;
     const remainingSubjects = curriculum.subjects.length - ratedSubjects;
-    const requiredGPA = targetGPA[field] || 3.0;
+
+    const requiredGPA = updatedTargetGpa || targetGpa; // Use the updated value if passed
 
     const currentGPA = ratedSubjects > 0 ? currentSum / ratedSubjects : 0;
 
-    // Check if the user fails any specific subject requirement
-    const fieldRequirements = gradeRequirements[field] || {};
-    for (const [subject, requiredGrade] of Object.entries(fieldRequirements)) {
-      const subjectIndex = curriculum.subjects.findIndex(
-        (s) => s.name === subject
-      );
-      if (
-        subjectIndex !== -1 &&
-        fullyRatedSubjects.some(
-          (s) =>
-            s.name === subject &&
-            calculateAverageGrades()[subjectIndex] < requiredGrade
-        )
-      ) {
-        setGradeInfo({
-          status: "fail",
-          gpa: currentGPA,
-          message: `Failed to meet the minimum grade requirement for ${subject}.`,
-        });
-        return;
-      }
-    }
+    // Calculate the required grade for remaining subjects
+    const remainingRequiredGrade =
+      (requiredGPA * curriculum.subjects.length - currentSum) /
+      remainingSubjects;
 
-    // Calculate the required grade for the remaining subjects
-    const requiredGrade =
-      remainingSubjects > 0
-        ? (requiredGPA * curriculum.subjects.length - currentSum) /
-          remainingSubjects
-        : 0;
-
-    // Determine the status based on the required grade
     if (remainingSubjects === 0) {
+      // All subjects are rated
       if (currentGPA >= requiredGPA) {
         setGradeInfo({
           status: "pass",
@@ -286,8 +338,8 @@ function Course_2() {
           message: "You did not meet the GPA requirement.",
         });
       }
-    } else if (requiredGrade > 4) {
-      // "Impossible" condition: required grade exceeds the maximum grade
+    } else if (remainingRequiredGrade > 4) {
+      // Impossible case: Remaining required grade exceeds 4
       setGradeInfo({
         status: "impossible",
         gpa: currentGPA,
@@ -295,10 +347,11 @@ function Course_2() {
           "It is impossible to pass the requirement with the remaining subjects.",
       });
     } else {
+      // Progress case: Calculate required grade for remaining subjects
       setGradeInfo({
         status: "progress",
         gpa: currentGPA,
-        message: `You need an average grade of ${requiredGrade.toFixed(
+        message: `You need an average grade of ${remainingRequiredGrade.toFixed(
           2
         )} in the remaining subjects to pass the requirement.`,
       });
@@ -306,9 +359,36 @@ function Course_2() {
   };
 
   useEffect(() => {
+    calculateGradeInfo(targetGpa); // Recalculate whenever targetGpa changes
+  }, [targetGpa]);
+
+  useEffect(() => {
     calculateGradeInfo();
   }, [ratings, field]);
 
+  const handleGpaChange = (value) => {
+    const gpa = Number(value);
+    if (gpa < 0 || gpa > 4) {
+      setGpaError("Target GPA must be between 0 and 4."); // Validate input
+    } else {
+      setGpaError(""); // Clear error
+      setTargetGpa(gpa);
+
+      // Update the target GPA in the backend
+      axios
+        .post("http://localhost:8000/api/user/target_gpa/", {
+          gmail: profile.email,
+          target_gpa: gpa,
+        })
+        .then(() => {
+          console.log("Target GPA updated successfully!");
+        })
+        .catch((err) => {
+          console.error("Error updating target GPA:", err);
+        });
+    }
+  };
+  
   const handleSubjectClick = (subject) => {
     setSelectedSubject(subject === selectedSubject ? null : subject);
   };
@@ -325,24 +405,31 @@ function Course_2() {
       ),
     }));
 
-    // Optional: Send reset data to the backend
+    // Send reset request to the backend
     axios
       .post("http://localhost:8000/api/user/reset-rating", {
         gmail: profile.email,
         subject: subjectName,
+      })
+      .then((response) => {
+        console.log("Ratings reset successfully:", response.data);
       })
       .catch((err) => {
         console.error("Error resetting ratings:", err);
       });
   };
 
+  const filteredSubjects = curriculum.subjects.filter((subject) =>
+    Object.keys(gradeRequirements[field] || {}).includes(subject.name)
+  );
+
   const barGraphData = {
-    labels: Object.keys(gradeRequirements[field] || {}),
+    labels: filteredSubjects.map((subject) => subject.name),
     datasets: [
       {
         label: "Required Grade",
-        data: Object.keys(gradeRequirements[field] || {}).map(
-          (subject) => gradeRequirements[field][subject]
+        data: filteredSubjects.map(
+          (subject) => gradeRequirements[field][subject.name]
         ),
         backgroundColor: "rgba(255, 99, 132, 0.5)",
         borderColor: "rgba(255, 99, 132, 1)",
@@ -350,24 +437,18 @@ function Course_2() {
       },
       {
         label: "Your Grade",
-        data: Object.keys(gradeRequirements[field] || {}).map((subject) => {
-          const subjectIndex = curriculum.subjects.findIndex(
-            (s) => s.name === subject
+        data: filteredSubjects.map((subject) => {
+          const topicRatings = Object.values(ratings[subject.name] || {});
+          const isFullyRated = topicRatings.every(
+            (rating) => rating !== null && rating !== undefined && rating !== -1
           );
-          if (subjectIndex !== -1) {
-            const topicRatings = Object.values(ratings[subject] || {});
-            const isFullyRated = topicRatings.every(
-              (rating) =>
-                rating !== null && rating !== undefined && rating !== -1
-            );
 
-            if (isFullyRated) {
-              const total = topicRatings.reduce(
-                (sum, rating) => sum + starToGrade(rating),
-                0
-              );
-              return total / topicRatings.length; // Average grade
-            }
+          if (isFullyRated) {
+            const total = topicRatings.reduce(
+              (sum, rating) => sum + starToGrade(rating),
+              0
+            );
+            return total / topicRatings.length; // Average grade
           }
           return null; // Return null for unrated subjects
         }),
@@ -390,7 +471,7 @@ function Course_2() {
     },
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!profile || !profile.email || !field || !career || !year) {
@@ -401,28 +482,38 @@ function Course_2() {
     }
 
     const userData = {
-      name: profile.name || "Anonymous", // Fallback for name
+      name: profile.name || "Anonymous",
       gmail: profile.email,
       year,
       career,
-      field, // Include the field property
+      field,
     };
 
-    axios
-      .post("http://localhost:8000/api/user/", userData)
-      .then((res) => {
-        if (res.data && res.data.curriculum) {
-          setCurriculum(res.data.curriculum);
-          setIsReturningUser(true);
-          console.log(isReturningUser);
-        } else {
-          console.error("No curriculum data returned from the server.");
-        }
-      })
-      .catch((err) => {
-        console.error("Error saving user data:", err);
-      });
+    try {
+      const response = await axios.post(
+        "http://localhost:8000/api/user/",
+        userData
+      );
+      if (response.data && response.data.curriculum) {
+        setCurriculum(response.data.curriculum);
+        setYear(response.data.user.year);
+        setCareer(response.data.user.career);
+        setField(response.data.user.field);
+        setName(response.data.user.name);
+      } else {
+        window.location.reload(); // This will reload the entire webpage
+        console.error("No curriculum data returned from the server.");
+      }
+    } catch (err) {
+      console.error("Error saving user data:", err);
+    }
   };
+
+  useEffect(() => {
+    if (isReturningUser && curriculum) {
+      console.log("Curriculum updated:", curriculum);
+    }
+  }, [curriculum, isReturningUser]);
 
   const lineGraphData = {
     labels: curriculum.subjects.map((subject) => subject.name),
@@ -450,10 +541,10 @@ function Course_2() {
       },
       {
         label: "Predicted Grades",
-        data: calculatePredictedGrades(),
+        data: calculatePredictedGrades(), // Use predicted grades
         borderColor: "rgba(255, 99, 132, 1)",
         backgroundColor: "rgba(255, 99, 132, 0.2)",
-        borderDash: [5, 5],
+        borderDash: [5, 5], // Dashed line
         borderWidth: 2,
       },
     ],
@@ -471,12 +562,19 @@ function Course_2() {
     },
   };
 
+  const hasMatchingSubjects = () => {
+    const requiredSubjects = Object.keys(gradeRequirements[field] || {});
+    return curriculum.subjects.some((subject) =>
+      requiredSubjects.includes(subject.name)
+    );
+  };
+
   return (
     <>
       <Nav />
-      <div className="p-6 pt-32 bg-gradient-to-r from-orange-400 to-red-500">
+      <div className="p-6 pt-32 bg-gradient-to-br from-sky-200 via-white to-sky-100">
         {!isReturningUser ? (
-          <div className="max-w-md mx-auto mt-10 p-6 bg-gradient-to-r from-orange-400 to-red-500 rounded-lg shadow-md">
+          <div className="max-w-md mx-auto mt-10 p-6 bg-gradient-to-br from-sky-200 via-white to-sky-100 rounded-lg shadow-md">
             <h2 className="text-xl font-bold text-center mb-6">
               Welcome! Complete Your Profile
             </h2>
@@ -550,6 +648,24 @@ function Course_2() {
                 <p>Year: {year}</p>
                 <p>Career: {career}</p>
                 <p>Field: {field}</p>
+                <div className="mb-6">
+                  <label className="block text-lg font-bold text-gray-700">
+                    Enter Your Target GPA:
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="4"
+                    value={targetGpa}
+                    onChange={(e) => handleGpaChange(e.target.value)}
+                    className="w-full mt-2 p-2 border rounded-md"
+                  />
+                  {gpaError && (
+                    <p className="text-red-500 text-sm mt-2">{gpaError}</p> // Display error message
+                  )}
+                </div>
+
                 <label className="block text-gray-700 mt-4">
                   Select Semester:
                   <select
@@ -573,11 +689,13 @@ function Course_2() {
                     : "border-gray-300 text-gray-700"
                 }`}
                 style={{
-                  borderWidth: "2px", // Optional: Add a thicker border for visual clarity
+                  borderWidth: "2px",
                 }}
               >
                 <h2 className="text-lg font-bold">Grade Information</h2>
-                <p>Current GPA: {gradeInfo.gpa.toFixed(2)}</p>
+                <p>Current GPA: {calculateGPA()}</p>
+                <p>Target GPA: {targetGpa}</p>{" "}
+                {/* Dynamically shows target GPA */}
                 <p>{gradeInfo.message}</p>
               </div>
             </div>
@@ -585,62 +703,101 @@ function Course_2() {
             <h2 className="text-xl font-bold mt-6 pt-6">Subjects</h2>
             <div className="flex flex-col space-y-4 pt-3">
               {curriculum.subjects.map((subject, index) => {
-                const progressPercent = subject.topics?.length
-                  ? calculateProgress(subject)
-                  : 0; // Set progress to 0 if no topics exist
+                const progressPercent = calculateProgress(subject); // Call calculateProgress for each subject
 
                 return (
                   <div
-                    key={index}
-                    className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:-translate-y-1"
-                  >
-                    <div
-                      className="cursor-pointer"
-                      onClick={() => handleSubjectClick(subject)}
-                    >
-                      <h3 className="text-lg font-bold">{subject.name}</h3>
-                      <p className="text-sm text-gray-600">
-                        {subject.topics?.length
-                          ? `${progressPercent}% completed`
-                          : "No topics available"}
-                      </p>
-                      {subject.topics?.length &&
-                        renderProgressBar(progressPercent)}
-                    </div>
-                    {selectedSubject === subject && subject.topics?.length && (
-                      <div className="mt-4 bg-gray-100 p-4 rounded shadow">
-                        <h4 className="text-md font-bold">
-                          Details for {subject.name}
-                        </h4>
-                        <p>
-                          {subject.description || "No description available."}
-                        </p>
-                        <h4 className="text-md font-bold mt-4">Topics</h4>
-                        {subject.topics.map((topic, idx) => (
-                          <div key={idx} className="mt-2">
-                            <h5>{topic.name}</h5>
-                            <StarRatingComponent
-                              name={`${subject.name}-${topic.name}`}
-                              starCount={10}
-                              value={ratings[subject.name]?.[topic.name] || -1}
-                              onStarClick={(nextValue) =>
-                                onTopicRatingChange(
-                                  subject.name,
-                                  topic.name,
-                                  nextValue
-                                )
-                              }
-                            />
-                          </div>
-                        ))}
+  key={index}
+  className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:-translate-y-1 relative"
+>
+  {/* Top-right corner grade */}
+  {(() => {
+    const topicRatings = Object.values(ratings[subject.name] || {}).filter(
+      (rating) => rating > 0
+    );
+    const total = topicRatings.reduce(
+      (sum, rating) => sum + starToGrade(rating),
+      0
+    );
+    const averageGrade = topicRatings.length > 0 ? total / topicRatings.length : null;
 
-                        {/* Reset Button */}
-                        <button
-                          className="mt-4 px-4 py-2 bg-red-500 text-white rounded"
-                          onClick={() => resetSubjectRatings(subject.name)}
-                        >
-                          Reset Ratings for {subject.name}
-                        </button>
+    return averageGrade !== null ? (
+      <div className="absolute top-2 right-2 bg-blue-100 text-blue-800 font-bold text-sm rounded-full px-3 py-1 shadow">
+        {gradeToLetter(averageGrade)}
+      </div>
+    ) : null;
+  })()}
+
+  {/* Subject Name and Details */}
+  <div
+    className="cursor-pointer"
+    onClick={() => handleSubjectClick(subject)}
+  >
+    <h3 className="text-lg font-bold">{subject.name}</h3>
+    <p className="text-sm text-gray-600">
+      {subject.topics?.length
+        ? `${calculateProgress(subject)}% completed`
+        : "No topics available"}
+    </p>
+
+    {/* Render the progress bar */}
+    <div className="w-full bg-gray-300 rounded-full h-4 mt-2">
+      <div
+        className="bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 h-4 rounded-full transition-all duration-500 ease-in-out"
+        style={{ width: `${calculateProgress(subject)}%` }}
+      ></div>
+    </div>
+  </div>
+
+
+
+                    {selectedSubject === subject && subject.topics?.length && (
+                      <div className="mt-4 bg-gray-100 p-4 rounded shadow flex flex-col lg:flex-row lg:items-start lg:gap-8">
+                        {/* Left Section: Ratings */}
+                        <div className="flex-1">
+                          <h4 className="text-md font-bold">
+                            Details for {subject.name}
+                          </h4>
+                          <p>
+                            {subject.description || "No description available."}
+                          </p>
+
+                          <h4 className="text-md font-bold mt-4">Topics</h4>
+                          {subject.topics.map((topic, idx) => (
+                            <div key={idx} className="mt-2">
+                              <h5>{topic.name}</h5>
+                              <StarRatingComponent
+                                name={`${subject.name}-${topic.name}`}
+                                starCount={10}
+                                value={
+                                  ratings[subject.name]?.[topic.name] || -1
+                                }
+                                onStarClick={(nextValue) =>
+                                  onTopicRatingChange(
+                                    subject.name,
+                                    topic.name,
+                                    nextValue
+                                  )
+                                }
+                              />
+                            </div>
+                          ))}
+
+                          {/* Reset Button */}
+                          <button
+                            className="mt-4 px-4 py-2 bg-red-500 text-white rounded"
+                            onClick={() => resetSubjectRatings(subject.name)}
+                          >
+                            Reset Ratings for {subject.name}
+                          </button>
+                        </div>
+
+                        {/* Right Section: Videos */}
+                        <div className="flex flex-col gap-4 lg:w-1/2">
+                          <h4 className="text-md font-bold">Watch Lectures</h4>
+
+                          <YoutubeSearch />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -649,11 +806,22 @@ function Course_2() {
             </div>
 
             <div className="grid grid-cols-2 gap-6 mt-10">
-              <div className="bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-lg font-bold mb-4">Subject Requirements</h2>
-                <Bar data={barGraphData} options={barGraphOptions} />
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow-md">
+              {/* Conditionally render the bar graph */}
+              {filteredSubjects.length > 0 ? (
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                  <h2 className="text-lg font-bold mb-4">
+                    Subject Requirements
+                  </h2>
+                  <Bar data={barGraphData} options={barGraphOptions} />
+                </div>
+              ) : null}
+
+              {/* Line graph */}
+              <div
+                className={`bg-white p-6 rounded-lg shadow-md ${
+                  filteredSubjects.length === 0 ? "col-span-2" : ""
+                }`}
+              >
                 <h2 className="text-lg font-bold mb-4">Overall Progress</h2>
                 <Line data={lineGraphData} options={lineGraphOptions} />
               </div>

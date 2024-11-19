@@ -4,7 +4,7 @@ import Calendar from './Calendar/Calendar'
 
 const schedule = () => {
   return (
-    <div className="bg-slate-300 min-h-screen pt-32">
+    <div className="bg-customGray min-h-screen pt-32">
       <Nav></Nav>
       <div className="mt-6">
         <div className="main-calendar">

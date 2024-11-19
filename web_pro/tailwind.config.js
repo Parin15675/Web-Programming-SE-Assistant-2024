@@ -5,7 +5,12 @@ module.exports = {
     './public/index.html',         // Include your HTML file if needed
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        customBlue: '#1a2a49', // Dark Blue
+        customGray: '#e5e5e0', // Light Gray
+      },
+    },
   },
   plugins: [],
 }

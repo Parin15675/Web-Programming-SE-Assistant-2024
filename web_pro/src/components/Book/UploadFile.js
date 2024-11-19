@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import axios from "axios";
 
-function UploadFile({ onUploadSuccess }) {
+function UploadFile({ onUploadSuccess, year, closeModal }) {
   const [selectedFile, setSelectedFile] = useState(null);
-  const [year, setYear] = useState(""); // Track selected year
   const [uploadSuccess, setUploadSuccess] = useState(null);
 
   const handleFileChange = (event) => {
@@ -12,8 +11,8 @@ function UploadFile({ onUploadSuccess }) {
 
   const handleUpload = async (event) => {
     event.preventDefault();
-    if (!selectedFile || !year) {
-      alert("Please select a file and year.");
+    if (!selectedFile) {
+      alert("Please select a file.");
       return;
     }
 
@@ -37,6 +36,7 @@ function UploadFile({ onUploadSuccess }) {
       if (onUploadSuccess) {
         onUploadSuccess();
       }
+      closeModal(); // Close modal after successful upload
     } catch (error) {
       console.error("Upload failed:", error.response?.data || error.message);
       setUploadSuccess(false);
@@ -46,7 +46,7 @@ function UploadFile({ onUploadSuccess }) {
   return (
     <div className="bg-white rounded-lg shadow-md p-6 w-full max-w-md mx-auto">
       <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-        Upload a PDF
+        Upload a PDF for Year {year}
       </h2>
       <form onSubmit={handleUpload} className="space-y-4">
         <div>
@@ -59,23 +59,6 @@ function UploadFile({ onUploadSuccess }) {
             accept="application/pdf"
             className="block w-full text-gray-800 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
           />
-        </div>
-        <div>
-          <label className="block text-gray-600 font-medium mb-2">
-            Select Year
-          </label>
-          <select
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            required
-            className="block w-full text-gray-800 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">Select Year</option>
-            <option value="1">Year 1</option>
-            <option value="2">Year 2</option>
-            <option value="3">Year 3</option>
-            <option value="4">Year 4</option>
-          </select>
         </div>
         <button
           type="submit"

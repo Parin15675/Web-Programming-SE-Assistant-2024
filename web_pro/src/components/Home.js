@@ -7,26 +7,28 @@ import { useSelector } from "react-redux";
 import { Line } from "react-chartjs-2";
 import { useNavigate } from "react-router-dom";
 
+
 const Video = () => {
   const [curriculum, setCurriculum] = useState(null);
   const [ratings, setRatings] = useState({});
-  const [tasks, setTasks] = useState(["Finish Math Homework", "Review AI Notes"]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [semester, setSemester] = useState(1); // Default to Semester 1
+  const [targetGpa, setTargetGpa] = useState(3.0);
   const profile = useSelector((state) => state.profile);
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const fetchCurriculum = (semester) => {
     if (profile && profile.email) {
       axios
         .get(
           `http://localhost:8000/api/user/schedules/${encodeURIComponent(
             profile.email
-          )}`
+          )}?semester=${semester}` // Fetch data for selected semester
         )
         .then((res) => {
+          console.log("API Response:", res.data); // ดูข้อมูลที่ได้รับ
           const { curriculum: userCurriculum } = res.data;
           setCurriculum(userCurriculum);
-
+  
           const updatedRatings = {};
           userCurriculum.subjects.forEach((subject) => {
             updatedRatings[subject.name] = {};
@@ -41,7 +43,30 @@ const Video = () => {
           console.error("Error fetching user data:", err);
         });
     }
+  };
+
+  
+  useEffect(() => {
+    if (profile && profile.email) {
+      // Fetch the current targetGpa from the backend
+      axios
+        .get(`http://localhost:8000/api/user/target_gpa/${encodeURIComponent(profile.email)}`)
+        .then((res) => {
+          console.log(res.data.target_gpa)
+          setTargetGpa(res.data.target_gpa); // Update targetGpa from backend
+          console.log(targetGpa)
+        })
+        .catch((err) => {
+          console.error("Error fetching target GPA:", err);
+          // Default value remains 3.5 if API fails
+        });
+    }
   }, [profile]);
+  
+
+  useEffect(() => {
+    fetchCurriculum(semester); // Fetch data for the default semester on load
+  }, [profile, semester]);
 
   const starToGrade = (stars) => {
     if (stars === 10) return 4.0;
@@ -58,7 +83,7 @@ const Video = () => {
   const calculateAverageGrades = () => {
     return curriculum.subjects.map((subject) => {
       const topicRatings = Object.values(ratings[subject.name] || {}).filter(
-        (rating) => rating !== -1
+        (rating) => rating > 0 // Only consider rated topics
       );
       const total = topicRatings.reduce(
         (sum, rating) => sum + starToGrade(rating),
@@ -71,35 +96,80 @@ const Video = () => {
   const calculatePredictedGrades = () => {
     const averageGrades = calculateAverageGrades();
     const currentSum = averageGrades.reduce(
-      (sum, grade) => sum + (grade > 0 ? grade : 0),
+      (sum, grade) => sum + (grade > 0 ? grade : 0), // Include only valid grades
       0
     );
+
     const ratedSubjects = averageGrades.filter((grade) => grade > 0).length;
     const remainingSubjects = curriculum.subjects.length - ratedSubjects;
-    const requiredGPA = 3.0;
 
-    if (remainingSubjects === 0) return averageGrades;
+    // Use the user-defined targetGpa
+    const requiredGPA = targetGpa;
 
+    if (remainingSubjects === 0) {
+      // If all subjects are rated, return actual grades
+      return averageGrades;
+    }
+
+    // Calculate the average grade required for unrated subjects
     const remainingRequiredGrade =
       (requiredGPA * curriculum.subjects.length - currentSum) /
       remainingSubjects;
 
+    // Ensure the required grade is valid (0 to 4)
+    const isFeasible =
+      remainingRequiredGrade <= 4 && remainingRequiredGrade >= 0;
+
     return curriculum.subjects.map((_, index) => {
-      return averageGrades[index] > 0
-        ? averageGrades[index]
-        : remainingRequiredGrade <= 4 && remainingRequiredGrade >= 0
-        ? remainingRequiredGrade
-        : null;
+      if (averageGrades[index] > 0) {
+        // Use actual grade for rated subjects
+        return averageGrades[index];
+      } else if (isFeasible) {
+        // Use predicted grade for unrated subjects
+        return remainingRequiredGrade;
+      } else {
+        // If not feasible, leave as null
+        return null;
+      }
     });
   };
 
   const calculateGPA = () => {
-    const averageGrades = calculateAverageGrades();
-    const ratedGrades = averageGrades.filter((grade) => grade > 0);
-    const totalGPA = ratedGrades.reduce((sum, grade) => sum + grade, 0);
-    return ratedGrades.length > 0
-      ? (totalGPA / ratedGrades.length).toFixed(2)
-      : "0.00";
+    let totalWeightedGrade = 0;
+    let totalCredits = 0;
+
+    curriculum.subjects.forEach((subject) => {
+      const topicRatings = Object.values(ratings[subject.name] || {}).filter(
+        (rating) => rating > 0 // Only consider rated topics
+      );
+
+      if (topicRatings.length > 0) {
+        const averageGrade =
+          topicRatings.reduce((sum, rating) => sum + starToGrade(rating), 0) /
+          topicRatings.length;
+
+        totalWeightedGrade += averageGrade * subject.credit; // Weighted by credits
+        totalCredits += subject.credit;
+      }
+    });
+
+    const gpa =
+      totalCredits > 0
+        ? (totalWeightedGrade / totalCredits).toFixed(2)
+        : "0.00";
+
+    console.log("Calculated GPA:", gpa);
+    console.log("Ratings Structure:", ratings);
+    curriculum.subjects.forEach((subject) => {
+      const topicRatings = Object.values(ratings[subject.name] || {}).filter(
+        (rating) => rating > 0
+      );
+      console.log(`Subject: ${subject.name}`);
+      console.log(`Topic Ratings: ${topicRatings}`);
+      console.log(`Subject Credit: ${subject.credit}`);
+    });
+
+    return gpa;
   };
 
   const lineGraphData = {
@@ -145,94 +215,77 @@ const Video = () => {
     },
   };
 
-  const handleAddTask = (e) => {
-    if (e.key === "Enter" && e.target.value.trim()) {
-      setTasks([...tasks, e.target.value.trim()]);
-      e.target.value = "";
-    }
-  };
-
   if (!curriculum) {
     return <div className="text-center mt-8">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-200 via-white to-sky-100 pt-32">
+    <div className="min-h-screen bg-customGray text-black p-6 pt-32">
       <Nav />
       <div className="container mx-auto p-6">
         {/* Hero Section */}
-        <div className="bg-gradient-to-r from-purple-500 via-blue-500 to-green-400 p-6 rounded-lg text-center text-white mb-8">
-          <h1 className="text-4xl font-bold">Welcome, {profile.name || "Student"}!</h1>
-          <p className="text-lg mt-2">Track your academic progress and unlock achievements!</p>
+        <div className="bg-gradient-to-r from-[#1a2a49] via-[#457b9d] to-[#a8dadc] p-6 rounded-lg text-center text-white mb-8">
+          <h1 className="text-4xl font-bold">
+            Welcome, {profile.name || "Student"}!
+          </h1>
+          <p className="text-lg mt-2">
+            Track your academic progress and unlock achievements!
+          </p>
+        </div>
+
+        {/* Semester Selection */}
+        <div className="mb-6 flex justify-center">
+          <label className="text-lg font-bold text-gray-700 mr-4">
+            Select Semester:
+          </label>
+          <select
+            className="border border-gray-300 rounded-md shadow-sm p-2"
+            value={semester}
+            onChange={(e) => setSemester(Number(e.target.value))}
+          >
+            <option value={1}>Semester 1</option>
+            <option value={2}>Semester 2</option>
+          </select>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Section */}
           <div className="lg:col-span-2">
-            {/* Search Bar */}
-            <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md"
-                placeholder="Search subjects..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
             {/* Subjects */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {curriculum.subjects
-                .filter((subject) =>
-                  subject.name.toLowerCase().includes(searchQuery.toLowerCase())
-                )
-                .map((subject, index) => (
-                  <div
-                    key={index}
-                    className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105 cursor-pointer"
-                    onClick={() =>
-                      navigate(`/course/${encodeURIComponent(subject.name)}`)
-                    }
-                  >
-                    <h3 className="text-lg font-bold text-gray-700 text-center">
-                      {subject.name}
-                    </h3>
-                  </div>
-                ))}
+              {curriculum.subjects.map((subject, index) => (
+                <div
+                  key={index}
+                  className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105 cursor-pointer"
+                  onClick={() =>
+                    navigate(`/course/${encodeURIComponent(subject.name)}`)
+                  }
+                >
+                  <h3 className="text-lg font-bold text-gray-700 text-center">
+                    {subject.name}
+                  </h3>
+                </div>
+              ))}
             </div>
 
             {/* Academic Progress */}
             <div className="bg-white p-6 rounded-lg shadow-md mt-8">
-              <h3 className="text-xl font-semibold text-gray-700 mb-4">
-                Academic Progress
-              </h3>
-              <p className="text-lg font-semibold text-gray-600 mb-4">
-                Current GPA: {calculateGPA()}
-              </p>
-              <Line data={lineGraphData} options={lineGraphOptions} />
-            </div>
+  <h3 className="text-xl font-semibold text-gray-700 mb-4">
+    Academic Progress
+  </h3>
+  <p className="text-lg font-semibold text-gray-600 mb-4">
+    Current GPA: {calculateGPA()}
+  </p>
+  <p className="text-lg font-semibold text-gray-600 mb-4">
+    Target GPA: {targetGpa}
+  </p>
+  <Line data={lineGraphData} options={lineGraphOptions} />
+</div>
+
           </div>
 
           {/* Right Section */}
           <div>
-            {/* To-Do List */}
-            <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-              <h3 className="text-xl font-bold text-gray-700 mb-4">To-Do List</h3>
-              <ul>
-                {tasks.map((task, index) => (
-                  <li key={index} className="text-gray-700 mb-2">
-                    {task}
-                  </li>
-                ))}
-              </ul>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded-md mt-4"
-                placeholder="Add a new task..."
-                onKeyDown={handleAddTask}
-              />
-            </div>
-
             {/* Calendar Notification */}
             <CalendarNotification />
 

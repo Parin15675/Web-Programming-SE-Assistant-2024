@@ -13,6 +13,7 @@ users_collection = database.users
 curriculum_collection = database.curriculum
 curriculum_collection2 = database.curriculum_2
 holiday_collection = database.holiday
+target_gpaDB = database.target_gpa
 fs = AsyncIOMotorGridFSBucket(database)  # Initialize GridFS for async file storage
 
 fs_year1 = AsyncIOMotorGridFSBucket(database, bucket_name="fs_year1")
@@ -69,89 +70,238 @@ async def create_user(user: User):
     new_user = await users_collection.find_one({"_id": result.inserted_id})
     return user_helper(new_user)  
 
-# ฟังก์ชันสำหรับดึงข้อมูลวิชาเรียนตามปีการศึกษาและอีเมลผู้ใช้
 async def fetch_curriculum_by_year(year: int, gmail: str):
-    document = await curriculum_collection2.find_one({"year": year, "gmail": gmail})
-    if document:
-        document["_id"] = str(document["_id"])  # แปลง ObjectId เป็น string
-        return document
-    return None
+    user = await users_collection.find_one({"gmail": gmail})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-# ฟังก์ชันสำหรับเพิ่มข้อมูลวิชาเรียนล่วงหน้า
+    if year == 3:
+        field = user.get("field")
+        if not field:
+            raise HTTPException(status_code=400, detail="Field of interest is required for Year 3 users")
+        
+        # Filter subjects by field for Year 3
+        document = await curriculum_collection2.find_one({"year": year, "gmail": gmail})
+        if document:
+            filtered_subjects = [
+                subject for subject in document.get("subjects", [])
+                if subject.get("field", "For All") in [field, "For All"]
+            ]
+            document["subjects"] = filtered_subjects
+            return document
+    else:
+        # General curriculum for other years
+        document = await curriculum_collection2.find_one({"year": year, "gmail": gmail})
+    
+    if document:
+        return document
+    raise HTTPException(status_code=404, detail="Curriculum not found")
+
+
+
 async def initialize_curriculums(gmail):
     curriculums = [
+        # Year 1 Semester 1
         {
             "year": 1,
             "semester": 1,
-            "gmail": gmail,  
+            "gmail": gmail,
             "subjects": [
                 {
-                    "name": "Math 101",
-                    "description": "Basic mathematics covering algebra, calculus, and geometry.",
+                    "name": "Introduction to Calculus",
+                    "description": "Functions, limits, continuity, derivatives, integrals, sequences, and series.",
+                    "credit": 3,
+                    "field": "For All",
                     "topics": [
-                        {"name": "Algebra", "rating": 0},
-                        {"name": "Calculus", "rating": 0},
-                        {"name": "Geometry", "rating": 0}
+                        {"name": "Functions", "rating": 0},
+                        {"name": "Derivatives", "rating": 0},
+                        {"name": "Integrals", "rating": 0}
                     ]
                 },
                 {
-                    "name": "Physics 101",
-                    "description": "Introduction to physics with a focus on mechanics and motion.",
+                    "name": "Circuits and Electronics",
+                    "description": "Electric circuits, Ohm's law, Kirchhoff's law, semiconductors, and operational amplifiers.",
+                    "credit": 4,
+                    "field": "For All",
                     "topics": [
-                        {"name": "Mechanics", "rating": 0},
-                        {"name": "Thermodynamics", "rating": 0},
-                        {"name": "Waves", "rating": 0}
+                        {"name": "Electric Circuits", "rating": 0},
+                        {"name": "Semiconductors", "rating": 0},
+                        {"name": "Operational Amplifiers", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Elementary Systems Programming",
+                    "description": "Rust programming language: loops, functions, memory, and ownership.",
+                    "credit": 4,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Rust Basics", "rating": 0},
+                        {"name": "Memory Management", "rating": 0},
+                        {"name": "Functions", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Computer Programming",
+                    "description": "Structured programming, object-oriented approaches, and GUI basics.",
+                    "credit": 4,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Programming Basics", "rating": 0},
+                        {"name": "Object-Oriented Programming", "rating": 0},
+                        {"name": "GUI Design", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "INTERCULTURAL COMMUNICATION SKILLS IN ENGLISH 1",
+                    "description": "Foundational communication skills for intercultural contexts.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Speaking Skills", "rating": 0},
+                        {"name": "Listening Skills", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Introduction to Logic",
+                    "description": "Basic logic, reasoning, and problem-solving techniques.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Logic Basics", "rating": 0},
+                        {"name": "Reasoning", "rating": 0}
                     ]
                 }
             ]
         },
+        # Year 1 Semester 2
         {
             "year": 1,
             "semester": 2,
             "gmail": gmail,
             "subjects": [
                 {
-                    "name": "Programming 101",
-                    "description": "Fundamental programming concepts using Python.",
+                    "name": "Differential Equations",
+                    "description": "First-order and higher-order differential equations, linear systems.",
+                    "credit": 3,
+                    "field": "For All",
                     "topics": [
-                        {"name": "Python Basics", "rating": 0},
-                        {"name": "Control Structures", "rating": 0},
-                        {"name": "Data Structures", "rating": 0}
+                        {"name": "First-Order Equations", "rating": 0},
+                        {"name": "Higher-Order Equations", "rating": 0}
                     ]
                 },
                 {
-                    "name": "Chemistry 101",
-                    "description": "Introduction to basic chemistry concepts.",
+                    "name": "Discrete Mathematics",
+                    "description": "Set theory, graph theory, counting techniques, and recursion.",
+                    "credit": 3,
+                    "field": "For All",
                     "topics": [
-                        {"name": "Atomic Structure", "rating": 0},
-                        {"name": "Chemical Reactions", "rating": 0},
-                        {"name": "Periodic Table", "rating": 0}
+                        {"name": "Set Theory", "rating": 0},
+                        {"name": "Graph Theory", "rating": 0},
+                        {"name": "Counting", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Digital System Fundamentals",
+                    "description": "Binary systems, Boolean algebra, sequential circuits, and ALU design.",
+                    "credit": 4,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Binary Systems", "rating": 0},
+                        {"name": "Sequential Circuits", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Object-Oriented Programming",
+                    "description": "Encapsulation, inheritance, polymorphism, and UML modeling.",
+                    "credit": 4,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Encapsulation", "rating": 0},
+                        {"name": "Inheritance", "rating": 0},
+                        {"name": "Polymorphism", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "INTERCULTURAL COMMUNICATION SKILLS IN ENGLISH 2",
+                    "description": "Advanced communication skills for intercultural contexts.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Advanced Speaking", "rating": 0},
+                        {"name": "Advanced Writing", "rating": 0}
                     ]
                 }
             ]
         },
+        # Year 2 Semester 2
         {
             "year": 2,
             "semester": 1,
             "gmail": gmail,
             "subjects": [
                 {
-                    "name": "Data Structures",
-                    "description": "Study of linear and non-linear data structures such as stacks, queues, and trees.",
+                    "name": "Probability Models and Data Analysis",
+                    "description": "Probability, random variables, distributions, and statistical inference.",
+                    "credit": 3,
+                    "field": "For All",
                     "topics": [
-                        {"name": "Stacks", "rating": 0},
-                        {"name": "Queues", "rating": 0},
-                        {"name": "Trees", "rating": 0}
+                        {"name": "Probability", "rating": 0},
+                        {"name": "Random Variables", "rating": 0},
+                        {"name": "Distributions", "rating": 0}
                     ]
                 },
                 {
-                    "name": "Algorithms",
-                    "description": "Design and analysis of algorithms for problem-solving, including sorting, searching, and graph algorithms.",
+                    "name": "Computer Architecture and Organization",
+                    "description": "CPU, memory hierarchy, instruction set architecture, and GPU basics.",
+                    "credit": 4,
+                    "field": "For All",
                     "topics": [
-                        {"name": "Sorting", "rating": 0},
-                        {"name": "Searching", "rating": 0},
+                        {"name": "CPU Design", "rating": 0},
+                        {"name": "Memory Hierarchy", "rating": 0},
+                        {"name": "Parallelism", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Data Structures and Algorithms",
+                    "description": "Stacks, queues, trees, sorting algorithms, and graph algorithms.",
+                    "credit": 4,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Data Structures", "rating": 0},
+                        {"name": "Sorting Algorithms", "rating": 0},
                         {"name": "Graph Algorithms", "rating": 0}
                     ]
+                },
+                {
+                    "name": "Web Programming",
+                    "description": "HTML, CSS, JavaScript, and web frameworks.",
+                    "credit": 4,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "HTML", "rating": 0},
+                        {"name": "CSS", "rating": 0},
+                        {"name": "JavaScript", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Digital Citizen",
+                    "description": "Digital ethics, data privacy, and responsible technology usage.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Digital Ethics", "rating": 0},
+                        {"name": "Data Privacy", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Language and Communication Course",
+                    "description": "Advanced communication skills and language development.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Advanced Speaking", "rating": 0},
+                        {"name": "Writing Skills", "rating": 0}
+                    ]
                 }
             ]
         },
@@ -161,33 +311,400 @@ async def initialize_curriculums(gmail):
             "gmail": gmail,
             "subjects": [
                 {
-                    "name": "Database Systems",
-                    "description": "Introduction to database design, SQL, and relational database management systems.",
+                    "name": "Linear Algebra",
+                    "description": "Matrices, vector spaces, eigenvalues, and linear transformations.",
+                    "credit": 3,
+                    "field": "For All",
                     "topics": [
-                        {"name": "SQL Basics", "rating": 0},
-                        {"name": "ER Diagrams", "rating": 0},
-                        {"name": "Indexing", "rating": 0}
+                        {"name": "Matrices", "rating": 0},
+                        {"name": "Vector Spaces", "rating": 0},
+                        {"name": "Eigenvalues", "rating": 0}
                     ]
                 },
                 {
+                    "name": "Computer Networks",
+                    "description": "Network protocols, TCP/IP, routing, and wireless communication.",
+                    "credit": 4,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Network Protocols", "rating": 0},
+                        {"name": "Routing", "rating": 0},
+                        {"name": "Wireless Communication", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Algorithm Design and Analysis",
+                    "description": "Greedy methods, dynamic programming, and divide-and-conquer.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Greedy Methods", "rating": 0},
+                        {"name": "Dynamic Programming", "rating": 0},
+                        {"name": "Divide-and-Conquer", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Software Engineering Principles",
+                    "description": "Software development lifecycle, project management, and CASE tools.",
+                    "credit": 4,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Development Lifecycle", "rating": 0},
+                        {"name": "Project Management", "rating": 0},
+                        {"name": "CASE Tools", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Database Systems",
+                    "description": "SQL, ER diagrams, and relational database design.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "SQL", "rating": 0},
+                        {"name": "ER Diagrams", "rating": 0},
+                        {"name": "Normalization", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Seminar in Software Engineering",
+                    "description": "Lectures and seminars by industry experts.",
+                    "credit": 0,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Seminar Topics", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Philosophy of Science",
+                    "description": "Philosophical foundations of science and critical thinking.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Scientific Method", "rating": 0},
+                        {"name": "Critical Thinking", "rating": 0}
+                    ]
+                }
+            ]
+        },
+        {
+            "year": 3,
+            "semester": 1,
+            "gmail": gmail,
+            "subjects": [
+                {
                     "name": "Operating Systems",
-                    "description": "Concepts and design of operating systems, including process management and memory management.",
+                    "description": "Organization and structure of operating systems, including process management, memory management, and file systems.",
+                    "credit": 3,
+                    "field": "For All",
                     "topics": [
                         {"name": "Process Management", "rating": 0},
                         {"name": "Memory Management", "rating": 0},
                         {"name": "File Systems", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Theory of Computation",
+                    "description": "Finite automata, regular expressions, Turing machines, and complexity theory.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Automata Theory", "rating": 0},
+                        {"name": "Turing Machines", "rating": 0},
+                        {"name": "Complexity Theory", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Software Design and Architecture",
+                    "description": "Principles of software design, patterns, and architectural styles.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Design Patterns", "rating": 0},
+                        {"name": "Architectural Styles", "rating": 0},
+                        {"name": "Quality Attributes", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Artificial Intelligence",
+                    "description": "Knowledge representation, search strategies, expert systems, and machine learning basics.",
+                    "credit": 3,
+                    "field": "AI",
+                    "topics": [
+                        {"name": "Search Strategies", "rating": 0},
+                        {"name": "Expert Systems", "rating": 0},
+                        {"name": "Machine Learning", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Computer Graphics and Mixed Reality",
+                    "description": "2D and 3D graphics, transformations, rendering, and introduction to Mixed Reality (MR).",
+                    "credit": 4,
+                    "field": "Metaverse",
+                    "topics": [
+                        {"name": "2D Transformations", "rating": 0},
+                        {"name": "3D Graphics", "rating": 0},
+                        {"name": "Mixed Reality", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Web Service Development and Service-Oriented Architecture",
+                    "description": "RESTful APIs, SOA, microservices, and cloud platforms.",
+                    "credit": 3,
+                    "field": "Metaverse and For Industrial IoT",
+                    "topics": [
+                        {"name": "RESTful APIs", "rating": 0},
+                        {"name": "SOA and Microservices", "rating": 0},
+                        {"name": "Cloud Platforms", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Real-Time Embedded System Design and Development",
+                    "description": "Design and development of real-time embedded systems, including ARM processors and scheduling.",
+                    "credit": 4,
+                    "field": "IoT",
+                    "topics": [
+                        {"name": "Embedded Processors", "rating": 0},
+                        {"name": "Scheduling", "rating": 0},
+                        {"name": "Performance Metrics", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "AI Programming",
+                    "description": "Hands-on programming with Prolog and Python for AI applications.",
+                    "credit": 1,
+                    "field": "AI",
+                    "topics": [
+                        {"name": "Prolog Programming", "rating": 0},
+                        {"name": "Python for AI", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Machine Learning",
+                    "description": "Introduction to supervised and unsupervised learning, neural networks, and reinforcement learning.",
+                    "credit": 3,
+                    "field": "AI",
+                    "topics": [
+                        {"name": "Supervised Learning", "rating": 0},
+                        {"name": "Unsupervised Learning", "rating": 0},
+                        {"name": "Neural Networks", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Data Science and Data Analytics",
+                    "description": "Data analysis techniques, data visualization, and real-world case studies.",
+                    "credit": 3,
+                    "field": "AI",
+                    "topics": [
+                        {"name": "Data Analysis", "rating": 0},
+                        {"name": "Visualization", "rating": 0},
+                        {"name": "Case Studies", "rating": 0}
+                    ]
+                }
+            ]
+        },
+        # Year 3 Semester 2
+        {
+            "year": 3,
+            "semester": 2,
+            "gmail": gmail,
+            "subjects": [
+                {
+                    "name": "Compiler Construction",
+                    "description": "Lexical analysis, parser construction, type checking, and code optimization.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Lexical Analysis", "rating": 0},
+                        {"name": "Parsing", "rating": 0},
+                        {"name": "Code Optimization", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Software Development Process and Project Management",
+                    "description": "Software development lifecycle, agile methods, and project management techniques.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Agile Methods", "rating": 0},
+                        {"name": "Project Management", "rating": 0},
+                        {"name": "Testing Strategies", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Distributed Computing",
+                    "description": "Distributed systems architecture, fault tolerance, and CAP theorem.",
+                    "credit": 3,
+                    "field": "Metaverse",
+                    "topics": [
+                        {"name": "Distributed Architectures", "rating": 0},
+                        {"name": "Fault Tolerance", "rating": 0},
+                        {"name": "CAP Theorem", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Advanced Database Systems",
+                    "description": "Database management systems, concurrency control, and distributed database systems.",
+                    "credit": 3,
+                    "field": "For Metaverse",
+                    "topics": [
+                        {"name": "Distributed Databases", "rating": 0},
+                        {"name": "Concurrency Control", "rating": 0},
+                        {"name": "Object-Oriented Databases", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Knowledge Representation and Reasoning",
+                    "description": "Study of semantic networks, frames, logic representation, and reasoning methods.",
+                    "credit": 3,
+                    "field": "AI",
+                    "topics": [
+                        {"name": "Semantic Networks", "rating": 0},
+                        {"name": "Logic Representation", "rating": 0},
+                        {"name": "Reasoning Methods", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Team Software Project",
+                    "description": "Team-based software and hardware project development, integrating knowledge and skills.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Requirement Analysis", "rating": 0},
+                        {"name": "Project Implementation", "rating": 0},
+                        {"name": "Project Management", "rating": 0}
+                    ]
+                },{
+                    "name": "User Experience and User Interface Design",
+                    "description": "A comprehensive overview of the user experience and user interface design process.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "User-Centered Design", "rating": 0},
+                        {"name": "Design Process", "rating": 0},
+                        {"name": "Interface Development", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Industrial IoT Networks and Communications",
+                    "description": "Study of IoT network standards, architectures, and secure communication protocols.",
+                    "credit": 3,
+                    "field": "IoT",
+                    "topics": [
+                        {"name": "IoT Standards", "rating": 0},
+                        {"name": "Secure Communication", "rating": 0},
+                        {"name": "Industrial Applications", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Cyber-Physical Systems and Industry 4.0",
+                    "description": "Introduction to CPS in smart factories, including Digital Twin and Industry 4.0 concepts.",
+                    "credit": 3,
+                    "field": "IoT",
+                    "topics": [
+                        {"name": "Cyber-Physical Systems", "rating": 0},
+                        {"name": "Industry 4.0", "rating": 0},
+                        {"name": "Communication Protocols", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Deep Learning",
+                    "description": "Comprehensive study of neural networks, backpropagation, and convolutional networks.",
+                    "credit": 3,
+                    "field": "AI",
+                    "topics": [
+                        {"name": "Neural Networks", "rating": 0},
+                        {"name": "Optimization", "rating": 0},
+                        {"name": "CNNs", "rating": 0}
+                    ]
+                }
+            ]
+        },
+        {
+            "year": 4,
+            "semester": 1,
+            "gmail": gmail,
+            "subjects": [
+                {
+                    "name": "Free Elective",
+                    "description": "Free elective course for enhancing interdisciplinary skills.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Interdisciplinary Skills", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Information and Computer Security",
+                    "description": "Overview of information security, risk management, encryption, and network security.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Risk Management", "rating": 0},
+                        {"name": "Encryption and Decryption", "rating": 0},
+                        {"name": "Network Security", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Software Engineering Project 1",
+                    "description": "First half of the senior project focusing on independent research and system development.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Project Development", "rating": 0},
+                        {"name": "Mid-Semester Report", "rating": 0},
+                        {"name": "Final Presentation", "rating": 0}
+                    ]
+                }
+            ]
+        },
+        # Year 4 Semester 2
+        {
+            "year": 4,
+            "semester": 2,
+            "gmail": gmail,
+            "subjects": [
+                {
+                    "name": "Software Verification and Validation",
+                    "description": "Study of testing techniques, peer reviews, and formal verification in software development.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Testing Techniques", "rating": 0},
+                        {"name": "Peer Reviews", "rating": 0},
+                        {"name": "Formal Verification", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Software Engineering Project 2",
+                    "description": "Continuation of Software Engineering Project 1 focusing on implementation and finalization.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Implementation", "rating": 0},
+                        {"name": "Final Presentation", "rating": 0},
+                        {"name": "Thesis Submission", "rating": 0}
+                    ]
+                },
+                {
+                    "name": "Professional Skills and Issues",
+                    "description": "Ethics, legal aspects, and professional practices in software engineering.",
+                    "credit": 3,
+                    "field": "For All",
+                    "topics": [
+                        {"name": "Professional Ethics", "rating": 0},
+                        {"name": "Team Management", "rating": 0},
+                        {"name": "Industry Practices", "rating": 0}
                     ]
                 }
             ]
         }
     ]
 
+
     # Insert the curriculum data into the database
     for curriculum in curriculums:
         result = await curriculum_collection2.insert_one(curriculum)
         print(f"Inserted curriculum for year {curriculum['year']}, semester {curriculum['semester']} with ObjectId: {result.inserted_id}")
-
-
 
 
 # ฟังก์ชันสำหรับดึงข้อมูลผู้ใช้จากชื่อ
