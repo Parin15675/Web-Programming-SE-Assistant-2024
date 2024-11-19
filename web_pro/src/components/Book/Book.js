@@ -34,7 +34,6 @@ function Book() {
       console.error("Error fetching books:", error);
     }
   };
-  
 
   const loadPdfThumbnail = async (url) => {
     try {
@@ -62,7 +61,9 @@ function Book() {
     const newThumbnails = {};
     for (const yearKey in booksByYear) {
       for (const book of booksByYear[yearKey]) {
-        const url = `http://localhost:8000/books/${yearKey.slice(-1)}/${book.id}`;
+        const url = `http://localhost:8000/books/${yearKey.slice(-1)}/${
+          book.id
+        }`;
         const thumbnail = await loadPdfThumbnail(url);
         newThumbnails[book.id] = thumbnail;
       }
@@ -101,16 +102,23 @@ function Book() {
     <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-sky-200 via-white to-sky-100">
       <Nav />
       <div className="container mx-auto py-20 pt-32">
-        <h1 className="text-center text-4xl font-bold text-white mb-8 drop-shadow-lg">
-          Book Hub
-        </h1>
+        <div className="bg-coursebg p-6 rounded-lg text-center text-white mb-8">
+          <h1 className="text-4xl font-extrabold text-white">Book Hub</h1>
+        </div>
 
         {/* Viewer Section */}
         {selectedBook && (
-          <div className="mt-10 px-6 mb-8"> {/* Added mb-8 for bottom margin */}
+          <div className="mt-10 px-6 mb-8">
+            {" "}
+            {/* Added mb-8 for bottom margin */}
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-800">
-                Viewing {booksByYear[`year${selectedBook.year}`].find(book => book.id === selectedBook.id)?.filename}
+                Viewing{" "}
+                {
+                  booksByYear[`year${selectedBook.year}`].find(
+                    (book) => book.id === selectedBook.id
+                  )?.filename
+                }
               </h2>
               <button
                 onClick={handleCloseViewer}
@@ -134,10 +142,7 @@ function Book() {
           <div className="w-full">
             <div className="space-y-8">
               {["year1", "year2", "year3", "year4"].map((yearKey, index) => (
-                <div
-                  key={index}
-                  className="bg-white shadow-lg rounded-lg p-6 "
-                >
+                <div key={index} className="bg-white shadow-lg rounded-lg p-6 ">
                   <div className="flex justify-between items-center">
                     <h2 className="text-3xl font-semibold text-gray-700 mb-4 text-center w-full">
                       Year {index + 1}
@@ -146,10 +151,10 @@ function Book() {
                       className="bg-blue-500 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-blue-600"
                       onClick={() => handleUploadButtonClick(index + 1)}
                     >
-                      <span className="text-4xl font-bold translate-y-[-3.5px] translate-x-[-0.5px]">+</span>
+                      <span className="text-4xl font-bold translate-y-[-3.5px] translate-x-[-0.5px]">
+                        +
+                      </span>
                     </button>
-                  
-
                   </div>
 
                   {/* Flex layout to wrap books into new rows */}
@@ -169,7 +174,10 @@ function Book() {
                             />
                           ) : (
                             <div className="flex justify-center items-center w-full h-full border-2 border-gray-400 rounded">
-                              <div className="spinner-border animate-spin inline-block w-12 h-12 border-4 border-t-transparent rounded-full text-gray-500" role="status">
+                              <div
+                                className="spinner-border animate-spin inline-block w-12 h-12 border-4 border-t-transparent rounded-full text-gray-500"
+                                role="status"
+                              >
                                 <span className="sr-only">Loading...</span>
                               </div>
                             </div>

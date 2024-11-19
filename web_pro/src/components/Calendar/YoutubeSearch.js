@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import './YoutubeSearch.css';
-import CalendarYoutubeModal from './CalendarYoutubeModal'; // Updated import to CalendarYoutubeModal
+import CalendarYoutubeModal from './CalendarYoutubeModal';
 
 const YoutubeSearch = () => {
     const [videos, setVideos] = useState([
@@ -10,8 +10,8 @@ const YoutubeSearch = () => {
                 title: 'Mock Lecture 1',
             },
             contentDetails: {
-                duration: 'PT1H20M', // Mock duration
-            }
+                duration: 'PT1H20M',
+            },
         },
         {
             id: { videoId: 'mockVideo2' },
@@ -19,8 +19,8 @@ const YoutubeSearch = () => {
                 title: 'Mock Lecture 2',
             },
             contentDetails: {
-                duration: 'PT55M', // Mock duration
-            }
+                duration: 'PT55M',
+            },
         },
         {
             id: { videoId: 'mockVideo3' },
@@ -28,17 +28,17 @@ const YoutubeSearch = () => {
                 title: 'Mock Lecture 3',
             },
             contentDetails: {
-                duration: 'PT45M', // Mock duration
-            }
-        }
-    ]); // Mock-up video data
-    const [selectedVideo, setSelectedVideo] = useState(null); // To store the selected video
-    const [isModalOpen, setIsModalOpen] = useState(false); // To control modal visibility
+                duration: 'PT45M',
+            },
+        },
+    ]);
 
-    // Open the modal with the selected video
+    const [selectedVideo, setSelectedVideo] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
     const handleSelectVideo = (video) => {
         setSelectedVideo(video);
-        setIsModalOpen(true); // Open the modal
+        setIsModalOpen(true);
     };
 
     return (
@@ -46,17 +46,19 @@ const YoutubeSearch = () => {
             <div className="video-container">
                 {videos.length > 0 ? (
                     videos.map((video) => (
-                        <div key={video.id.videoId} className="video">
-                            {/* Mock iframe for video */}
-                            <iframe
-                                src={`https://www.youtube.com/embed/${video.id.videoId}`}
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                                title={video.snippet.title}
-                            ></iframe>
-                            {/* Button to open modal */}
-                            <button onClick={() => handleSelectVideo(video)}>Schedule This</button>
+                        <div key={video.id.videoId} className="video-box">
+                            <div className="video-content">
+                                <iframe
+                                    src={`https://www.youtube.com/embed/${video.id.videoId}`}
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                    title={video.snippet.title}
+                                ></iframe>
+                                <h3>{video.snippet.title}</h3>
+                                <p>{video.contentDetails.duration}</p>
+                                <button onClick={() => handleSelectVideo(video)}>Schedule This</button>
+                            </div>
                         </div>
                     ))
                 ) : (
@@ -64,12 +66,8 @@ const YoutubeSearch = () => {
                 )}
             </div>
 
-            {/* Show Calendar Youtube Modal when a video is selected */}
             {isModalOpen && selectedVideo && (
-                <CalendarYoutubeModal 
-                    video={selectedVideo} 
-                    onClose={() => setIsModalOpen(false)} 
-                />
+                <CalendarYoutubeModal video={selectedVideo} onClose={() => setIsModalOpen(false)} />
             )}
         </div>
     );

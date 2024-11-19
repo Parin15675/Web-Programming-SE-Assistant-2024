@@ -26,7 +26,7 @@ app.add_middleware(
 )
 
 # Replace 'YOUR_YOUTUBE_API_KEY' with your actual YouTube Data API key
-YOUTUBE_API_KEY = 'AIzaSyAXT5DHpcfY65UVXLxsUN3k05Ja-HVH9WM'
+YOUTUBE_API_KEY = 'AIzaSyDPrsn37HKSyh83fpOuVJwsgWp_OY9w6s0'
 
 
 # @app.on_event("startup")

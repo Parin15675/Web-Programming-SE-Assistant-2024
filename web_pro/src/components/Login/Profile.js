@@ -15,7 +15,12 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
-  const careers = ["Data Analysis", "Software Engineer", "Web Development", "Other"];
+  const careers = [
+    "Data Analysis",
+    "Software Engineer",
+    "Web Development",
+    "Other",
+  ];
   const fields = ["AI", "Metaverse", "IoT", "Do Abroad"];
 
   const logOut = () => {
@@ -97,8 +102,8 @@ const Profile = () => {
   return (
     <>
       <Nav />
-      <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-orange-400 to-red-500">
-        <div className="bg-white shadow-lg rounded-lg w-3/4 max-w-2xl p-6">
+      <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-navy-800 via-navy-600 to-navy-900">
+        <div className="bg-navy-500/80 shadow-lg rounded-lg w-3/4 max-w-2xl p-6">
           {loading ? (
             <div className="text-center py-10">
               <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent border-solid rounded-full animate-spin"></div>
@@ -113,8 +118,10 @@ const Profile = () => {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <h1 className="text-2xl font-bold mt-4">{profile.name}</h1>
-                <p className="text-gray-600">{profile.email}</p>
+                <h1 className="text-2xl font-bold mt-4 text-white">
+                  {profile.name}
+                </h1>
+                <p className="text-white">{profile.email}</p>
               </div>
 
               <div className="space-y-4">
@@ -221,7 +228,7 @@ const Profile = () => {
                     </button>
                     <button
                       onClick={handleEditToggle}
-                      className="px-6 py-2 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400"
+                      class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded"
                     >
                       Cancel
                     </button>
@@ -236,7 +243,7 @@ const Profile = () => {
                 )}
                 <button
                   onClick={logOut}
-                  className="px-6 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600"
+                  class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
                 >
                   Log Out
                 </button>

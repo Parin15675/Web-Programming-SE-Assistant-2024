@@ -56,7 +56,6 @@ function Course_2() {
     if (grade >= 1.0) return "D";
     return "F";
   };
-  
 
   const starToGrade = (stars) => {
     if (stars === 10) return 4.0;
@@ -388,7 +387,7 @@ function Course_2() {
         });
     }
   };
-  
+
   const handleSubjectClick = (subject) => {
     setSelectedSubject(subject === selectedSubject ? null : subject);
   };
@@ -436,7 +435,7 @@ function Course_2() {
         borderWidth: 1,
       },
       {
-        label: "Your Grade",
+        label: "Your Expected Grade",
         data: filteredSubjects.map((subject) => {
           const topicRatings = Object.values(ratings[subject.name] || {});
           const isFullyRated = topicRatings.every(
@@ -466,6 +465,40 @@ function Course_2() {
         max: 4, // Set max to 4
         ticks: {
           stepSize: 0.5, // Optional: Add steps of 0.5 for clarity
+          font: {
+            size: 16, // Set the font size for y-axis ticks
+          },
+        },
+        title: {
+          display: true,
+          text: "Grades",
+          font: {
+            size: 16, // Set font size for axis title
+          },
+        },
+      },
+      x: {
+        ticks: {
+          font: {
+            size: 16, // Set the font size for x-axis ticks
+          },
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        labels: {
+          font: {
+            size: 14, // Set the font size for the legend
+          },
+        },
+      },
+      tooltip: {
+        bodyFont: {
+          size: 12, // Set the font size for tooltips
+        },
+        titleFont: {
+          size: 14, // Set the font size for tooltip titles
         },
       },
     },
@@ -519,7 +552,7 @@ function Course_2() {
     labels: curriculum.subjects.map((subject) => subject.name),
     datasets: [
       {
-        label: "Average Grades",
+        label: "Your Expected Grades",
         data: curriculum.subjects.map((subject) => {
           const topicRatings = Object.values(ratings[subject.name] || {});
           const isFullyRated = topicRatings.every(
@@ -540,7 +573,7 @@ function Course_2() {
         borderWidth: 2,
       },
       {
-        label: "Predicted Grades",
+        label: "Target Grades",
         data: calculatePredictedGrades(), // Use predicted grades
         borderColor: "rgba(255, 99, 132, 1)",
         backgroundColor: "rgba(255, 99, 132, 0.2)",
@@ -557,6 +590,40 @@ function Course_2() {
         max: 4, // Set max to 4
         ticks: {
           stepSize: 0.5, // Optional: Add steps of 0.5 for clarity
+          font: {
+            size: 16, // Set the font size for y-axis ticks
+          },
+        },
+        title: {
+          display: true,
+          text: "Grades",
+          font: {
+            size: 16, // Set font size for axis title
+          },
+        },
+      },
+      x: {
+        ticks: {
+          font: {
+            size: 16, // Set the font size for x-axis ticks
+          },
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        labels: {
+          font: {
+            size: 14, // Set the font size for the legend
+          },
+        },
+      },
+      tooltip: {
+        bodyFont: {
+          size: 12, // Set the font size for tooltips
+        },
+        titleFont: {
+          size: 14, // Set the font size for tooltip titles
         },
       },
     },
@@ -631,53 +698,55 @@ function Course_2() {
           </div>
         ) : (
           <>
-            <div className="text-center mb-10 ">
-              <h1 className="text-4xl font-extrabold text-gray-800">
+            <div className="bg-coursebg p-6 rounded-lg text-center text-white mb-8">
+              <h1 className="text-4xl font-extrabold text-white">
                 Your Academic Journey
               </h1>
-              <p className="text-gray-600 mt-2">
+              <p className="text-white mt-2">
                 Track your progress and see how you are performing across all
                 subjects.
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white p-4 rounded shadow-md">
-                <h2 className="text-lg font-bold">User Information</h2>
-                <p>Name: {name}</p>
-                <p>Year: {year}</p>
-                <p>Career: {career}</p>
-                <p>Field: {field}</p>
-                <div className="mb-6">
-                  <label className="block text-lg font-bold text-gray-700">
-                    Enter Your Target GPA:
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="4"
-                    value={targetGpa}
-                    onChange={(e) => handleGpaChange(e.target.value)}
-                    className="w-full mt-2 p-2 border rounded-md"
-                  />
-                  {gpaError && (
-                    <p className="text-red-500 text-sm mt-2">{gpaError}</p> // Display error message
-                  )}
+              <div className="bg-gradient-to-r from-blue-100 via-white to-blue-50 p-6 rounded-lg shadow-lg border border-gray-300">
+                {/* Title */}
+                <h2 className="text-xl font-bold text-customBlue mb-4 border-b border-blue-200 pb-2 text-center">
+                  User Information
+                </h2>
+
+                {/* User Details */}
+                <div className="space-y-2 text-lg">
+                  <p className="text-gray-700 ">
+                    <span className="font-semibold">Name:</span> {name}
+                  </p>
+                  <p className="text-gray-700">
+                    <span className="font-semibold">Year:</span> {year}
+                  </p>
+                  <p className="text-gray-700">
+                    <span className="font-semibold">Career:</span> {career}
+                  </p>
+                  <p className="text-gray-700">
+                    <span className="font-semibold">Field:</span> {field}
+                  </p>
                 </div>
 
-                <label className="block text-gray-700 mt-4">
-                  Select Semester:
+                {/* Semester Selector */}
+                <div className="mt-6">
+                  <label className="block text-lg font-bold text-gray-700">
+                    Select Semester:
+                  </label>
                   <select
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                    className="mt-2 block w-full p-3 border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
                     value={semester}
                     onChange={(e) => setSemester(Number(e.target.value))}
                   >
                     <option value={1}>Semester 1</option>
                     <option value={2}>Semester 2</option>
                   </select>
-                </label>
+                </div>
               </div>
+
               <div
                 className={`bg-white p-4 rounded shadow-md ${
                   gradeInfo.status === "pass"
@@ -692,77 +761,105 @@ function Course_2() {
                   borderWidth: "2px",
                 }}
               >
-                <h2 className="text-lg font-bold">Grade Information</h2>
-                <p>Current GPA: {calculateGPA()}</p>
-                <p>Target GPA: {targetGpa}</p>{" "}
+                <h2 className="text-2xl font-bold text-center">
+                  Grade Information
+                </h2>
+                <p className="text-lg font-semibold">Current GPA: {calculateGPA()}</p>
+                <p className="text-lg font-semibold">Target GPA: {targetGpa}</p>{" "}
                 {/* Dynamically shows target GPA */}
-                <p>{gradeInfo.message}</p>
+                <p className="text-lg  font-semibold">{gradeInfo.message}</p>
+                {/* Target GPA Input */}
+                <div className="mt-6">
+                  <label className="block text-lg font-bold text-gray-700">
+                    Enter Your Target GPA:
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="4"
+                    value={targetGpa}
+                    onChange={(e) => handleGpaChange(e.target.value)}
+                    className="w-full mt-2 p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-500"
+                  />
+                  {gpaError && (
+                    <p className="text-red-500 text-sm mt-2">{gpaError}</p>
+                  )}
+                </div>
               </div>
             </div>
 
-            <h2 className="text-xl font-bold mt-6 pt-6">Subjects</h2>
-            <div className="flex flex-col space-y-4 pt-3">
+            <h2 className="text-3xl font-bold mt-6 pt-8">Subjects</h2>
+            <div className="flex flex-col space-y-4 pt-5">
               {curriculum.subjects.map((subject, index) => {
                 const progressPercent = calculateProgress(subject); // Call calculateProgress for each subject
 
                 return (
                   <div
-  key={index}
-  className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:-translate-y-1 relative"
->
-  {/* Top-right corner grade */}
-  {(() => {
-    const topicRatings = Object.values(ratings[subject.name] || {}).filter(
-      (rating) => rating > 0
-    );
-    const total = topicRatings.reduce(
-      (sum, rating) => sum + starToGrade(rating),
-      0
-    );
-    const averageGrade = topicRatings.length > 0 ? total / topicRatings.length : null;
+                    key={index}
+                    className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:-translate-y-1 relative"
+                  >
+                    {/* Top-right corner grade */}
+                    {(() => {
+                      const topicRatings = Object.values(
+                        ratings[subject.name] || {}
+                      );
+                      const allTopicsRated = subject.topics.every(
+                        (topic) =>
+                          ratings[subject.name]?.[topic.name] !== undefined &&
+                          ratings[subject.name]?.[topic.name] !== -1
+                      );
 
-    return averageGrade !== null ? (
-      <div className="absolute top-2 right-2 bg-blue-100 text-blue-800 font-bold text-sm rounded-full px-3 py-1 shadow">
-        {gradeToLetter(averageGrade)}
-      </div>
-    ) : null;
-  })()}
+                      if (allTopicsRated) {
+                        const total = topicRatings.reduce(
+                          (sum, rating) => sum + starToGrade(rating),
+                          0
+                        );
+                        const averageGrade = total / topicRatings.length;
 
-  {/* Subject Name and Details */}
-  <div
-    className="cursor-pointer"
-    onClick={() => handleSubjectClick(subject)}
-  >
-    <h3 className="text-lg font-bold">{subject.name}</h3>
-    <p className="text-sm text-gray-600">
-      {subject.topics?.length
-        ? `${calculateProgress(subject)}% completed`
-        : "No topics available"}
-    </p>
+                        return (
+                          <div className="absolute top-2 right-2 bg-blue-100 text-blue-800 font-bold text-lg rounded-full px-3 py-1 shadow">
+                            {gradeToLetter(averageGrade)}
+                          </div>
+                        );
+                      }
 
-    {/* Render the progress bar */}
-    <div className="w-full bg-gray-300 rounded-full h-4 mt-2">
-      <div
-        className="bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 h-4 rounded-full transition-all duration-500 ease-in-out"
-        style={{ width: `${calculateProgress(subject)}%` }}
-      ></div>
-    </div>
-  </div>
+                      return null; // No grade letter if not all topics are rated
+                    })()}
 
+                    {/* Subject Name and Details */}
+                    <div
+                      className="cursor-pointer"
+                      onClick={() => handleSubjectClick(subject)}
+                    >
+                      <h3 className="text-xl font-bold">{subject.name}</h3>
+                      <p className="text-lg text-gray-600">
+                        {subject.topics?.length
+                          ? `${calculateProgress(subject)}% completed`
+                          : "No topics available"}
+                      </p>
 
+                      {/* Render the progress bar */}
+                      <div className="w-full bg-gray-300 rounded-full h-4 mt-2">
+                        <div
+                          className="bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 h-4 rounded-full transition-all duration-500 ease-in-out "
+                          style={{ width: `${calculateProgress(subject)}%` }}
+                        ></div>
+                      </div>
+                    </div>
 
                     {selectedSubject === subject && subject.topics?.length && (
                       <div className="mt-4 bg-gray-100 p-4 rounded shadow flex flex-col lg:flex-row lg:items-start lg:gap-8">
                         {/* Left Section: Ratings */}
                         <div className="flex-1">
-                          <h4 className="text-md font-bold">
+                          <h4 className="text-xl font-bold">
                             Details for {subject.name}
                           </h4>
-                          <p>
+                          <p className="text-lg">
                             {subject.description || "No description available."}
                           </p>
 
-                          <h4 className="text-md font-bold mt-4">Topics</h4>
+                          <h4 className="text-lg font-bold mt-4">Topics</h4>
                           {subject.topics.map((topic, idx) => (
                             <div key={idx} className="mt-2">
                               <h5>{topic.name}</h5>
@@ -779,6 +876,19 @@ function Course_2() {
                                     nextValue
                                   )
                                 }
+                                starDimension="40px" // Set the desired star size
+                                starSpacing="10px" // Set the spacing between stars
+                                renderStarIcon={(index, value) => (
+                                  <span
+                                    style={{
+                                      fontSize: "30px", // Force the star size with CSS
+                                      marginRight: "10px", // Force spacing with CSS
+                                      color: index <= value ? "gold" : "gray", // Optional: Change star color
+                                    }}
+                                  >
+                                    ★
+                                  </span>
+                                )}
                               />
                             </div>
                           ))}
@@ -793,7 +903,7 @@ function Course_2() {
                         </div>
 
                         {/* Right Section: Videos */}
-                        <div className="flex flex-col gap-4 lg:w-1/2">
+                        <div className="flex flex-col gap-2 lg:w-1/2 text-left text-xl" style={{ marginLeft: '-20px' }}>
                           <h4 className="text-md font-bold">Watch Lectures</h4>
 
                           <YoutubeSearch />
@@ -822,7 +932,7 @@ function Course_2() {
                   filteredSubjects.length === 0 ? "col-span-2" : ""
                 }`}
               >
-                <h2 className="text-lg font-bold mb-4">Overall Progress</h2>
+                <h2 className="text-xl font-bold mb-4">Overall Progress</h2>
                 <Line data={lineGraphData} options={lineGraphOptions} />
               </div>
             </div>
