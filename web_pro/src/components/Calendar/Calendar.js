@@ -482,15 +482,15 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                     <button onClick={() => setView('week')}>Week</button>
                     <button onClick={() => setView('month')}>Month</button>
                 </div>
-                <button style={{ width: '10%',}} onClick={prevPeriod}>&lt;</button>
-                <div style={{ display: 'flex', justifyContent: 'center',marginTop: '1.5%',marginLeft: '1.5%',marginRight:'1.5%',width: '20%',color: 'black', fontSize: '14px', backgroundColor: 'transparent' }}>
+                <button  style={{ width: '5%',}} onClick={prevPeriod}>&lt;</button>
+                <div style={{ display: 'flex', justifyContent: 'center',marginTop: '1.5%',marginLeft: '1.5%',marginRight:'1.5%',width: '15%',color: 'black', fontSize: '14px', backgroundColor: 'transparent' }}>
                 {view === 'week' 
                     ? `${currentWeek[0].toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`
                     : view === 'day' 
                     ? currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' }) 
                     : currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                 </div>
-                <button style={{ width: '10%', margin: 'none'}} onClick={nextPeriod}>&gt;</button>
+                <button style={{ width: '5%', margin: 'none'}} onClick={nextPeriod}>&gt;</button>
             </div>
             {(view === 'day' || view === 'week') && (
                 <div className="calendar-header">
