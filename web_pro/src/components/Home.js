@@ -285,7 +285,7 @@ const Video = () => {
           </div>
 
           {/* Right Section */}
-          <div>
+          <div className="-mt-5">
             {/* Calendar Notification */}
             <CalendarNotification />
 
