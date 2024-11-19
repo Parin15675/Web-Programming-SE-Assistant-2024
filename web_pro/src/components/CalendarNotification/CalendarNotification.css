@@ -29,14 +29,21 @@
     border: 1px solid #ddd;
     border-radius: 5px;
     padding: 10px;
-    margin-top: 10px;
+    padding-left: 40px;
+    margin-bottom: 25px;
+    padding: 20px 20px;
     text-align: left;
+    color: #ffd35c;
 }
+
+
 
 /* Event title styling */
 .calendar-notification-box li strong {
     color: #ff6f61; /* A vibrant color for the event title */
 }
+
+
 
 /* Event details styling (new) */
 .event-details {
@@ -47,6 +54,7 @@
 /* Notification message styling */
 .calendar-notification-box h1:first-child {
     color: #ff9f0e; /* Set color for notification message */
+    font-weight: bold;
 }
 
 /* Add responsiveness for mobile screens */

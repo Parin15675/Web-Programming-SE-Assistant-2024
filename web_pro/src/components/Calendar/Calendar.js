@@ -176,7 +176,12 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
         const newSchedules = { ...schedules };
     
         const startMinute = startTime?.minute || 0;
-        const endMinute = endTime?.minute || startMinute;
+        let endMinute = endTime?.minute || startMinute; // Changed from `const` to `let`
+
+        // Enforce minimum duration of 20 minutes
+        if (endMinute - startMinute < 20) {
+            endMinute = startMinute + 20; // Modify `endMinute`
+        }
     
         for (let i = startMinute; i <= endMinute; i++) {
             if (!newSchedules[dayKey]) {
@@ -724,10 +729,9 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
             {isVideoTypeModalOpen && (
                 <div className="modal-overlay">
                     <div className="modal-content">
-                        <h3>Select Video Type</h3>
-                        <button onClick={() => { setIsUrlModalOpen(true); setIsVideoTypeModalOpen(false); }}>Insert YouTube URL</button>
-                        <button onClick={() => { setIsMp4ModalOpen(true); setIsVideoTypeModalOpen(false); }}>Insert MP4</button>
-                        <button onClick={() => setIsVideoTypeModalOpen(false)}>Cancel</button>
+                        <button className="addvideo-button" onClick={() => { setIsUrlModalOpen(true); setIsVideoTypeModalOpen(false); }}>Insert YouTube URL</button>
+                        <button className="addvideo-button" onClick={() => { setIsMp4ModalOpen(true); setIsVideoTypeModalOpen(false); }}>Insert MP4</button>
+                        <button className="addvideo-button" onClick={() => setIsVideoTypeModalOpen(false)}>Cancel</button>
                     </div>
                 </div>
             )}
@@ -766,7 +770,7 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
                             accept="video/mp4"
                             onChange={handleMp4Upload}
                         />
-                        <button onClick={() => setIsMp4ModalOpen(false)}>Cancel</button>
+                        <button className="addvideo-button" onClick={() => setIsMp4ModalOpen(false)}>Cancel</button>
                     </div>
                 </div>
             )}
@@ -784,7 +788,7 @@ const Calendar = ({ onSelectSlot = () => {}, videoTitle = null, videoDuration = 
 
 
             {showAddVideoButton && (
-                <button onClick={() => setIsVideoTypeModalOpen(true)}>Add Video</button>
+                <button className="addvideo-button" onClick={() => setIsVideoTypeModalOpen(true)}>Add Video</button>
             )}
         </div>
         
@@ -842,7 +846,9 @@ const Modal = ({ isOpen, onClose, title, setTitle, details, setDetails, color, s
     const { hours: startHour, minutes: startMinute } = startTime ? getHourAndMinute(startTime.minute) : { hours: '', minutes: '' };
     const { hours: endHour, minutes: endMinute } = endTime ? getHourAndMinute(endTime.minute) : { hours: '', minutes: '' };
 
-    const colorPresets = ['#e81416', '#ffa500', '#faeb36', '#79c314', '#487de7', '#4b369d', '#70369d'];
+    
+
+    const colorPresets = ['#c13336', '#eaa81b', '#79c314', '#487de7', '#4b369d', '#70369d'];
     useEffect(() => {
         if (!color) {
             setColor('#e81416');
