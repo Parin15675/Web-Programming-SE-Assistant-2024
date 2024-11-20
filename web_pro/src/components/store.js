@@ -1,11 +1,9 @@
 import { createStore } from 'redux';
 
-// Initial state
 const initialState = {
     profile: null
 };
 
-// Reducer
 function reducer(state = initialState, action) {
     switch (action.type) {
         case 'SET_PROFILE':
@@ -17,7 +15,6 @@ function reducer(state = initialState, action) {
     }
 }
 
-// Create store
 const store = createStore(reducer);
 
 export default store;
