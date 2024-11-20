@@ -4,20 +4,18 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: linear-gradient(145deg, #1C426D, #1F3375); /* Gradient background */
-    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2); /* Deeper shadow for more emphasis */
+    background: linear-gradient(145deg, #1C426D, #1F3375);
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
     position: relative;
-    z-index: 1000; /* Ensure it's on top of other content */
-    border-bottom: 2px solid rgba(0, 0, 0, 0.1); /* Optional: adds a border at the bottom for a subtle effect */
+    z-index: 1000;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
 }
 
-/* Logo */
 .logo {
     width: 120px;
     cursor: pointer;
 }
 
-/* Navbar list styles */
 .navbar ul {
     list-style: none;
     display: flex;
@@ -29,33 +27,29 @@
     position: relative;
 }
 
-/* Navbar link styles */
 .navbar ul li a {
     text-decoration: none;
     color: #fff;
     text-transform: uppercase;
     padding: 10px 20px;
     display: inline-block;
-    transition: all 0.3s ease; /* Smooth transitions for hover and active effects */
-    background: rgba(255, 255, 255, 0.1); /* Subtle transparent background on each link */
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 20px;
 }
 
-/* Active link styling */
 .navbar ul li a.active {
-    background: linear-gradient(145deg, #00796b, #009688); /* Gradient active link */
+    background: linear-gradient(145deg, #00796b, #009688);
     border-radius: 20px;
     color: #fff;
 }
 
-/* Hover effects */
 .navbar ul li a:hover {
     color: #00b894;
-    background: rgba(255, 255, 255, 0.2); /* Slightly more opaque on hover */
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1); /* Add a subtle shadow on hover */
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Underline animation for links */
 .navbar ul li::after {
     content: '';
     height: 3px;
@@ -71,8 +65,7 @@
     width: 100%;
 }
 
-/* Shadow and gradient effect for navbar background */
 .banner {
-    background: linear-gradient(120deg, #2b5876, #4e4376); /* Beautiful purple-blue gradient */
-    box-shadow: inset 0 4px 10px rgba(222, 211, 211, 0.2); /* Adds depth inside the navbar */
+    background: linear-gradient(120deg, #2b5876, #4e4376);
+    box-shadow: inset 0 4px 10px rgba(222, 211, 211, 0.2);
 }
