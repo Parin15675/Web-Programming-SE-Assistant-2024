@@ -5,7 +5,7 @@ const Graph = ({ curriculum, ratings, calculatePredictedGrade, starRatingToNumer
   if (!curriculum || !curriculum.subjects) return null;
 
   const data = {
-    labels: curriculum.subjects.map((subject) => subject.name), // Subject names as labels
+    labels: curriculum.subjects.map((subject) => subject.name),
     datasets: [
       {
         label: "Your Grades",
@@ -13,12 +13,12 @@ const Graph = ({ curriculum, ratings, calculatePredictedGrade, starRatingToNumer
           const userRating = ratings[subject.name];
           return userRating !== null && userRating !== -1
             ? starRatingToNumericGrade(userRating)
-            : null; // Use the user's rating, if available
+            : null;
         }),
         borderColor: "rgba(75, 192, 192, 1)",
         backgroundColor: "rgba(75, 192, 192, 0.2)",
         borderWidth: 2,
-        tension: 0.4, // Smooth curve for the line
+        tension: 0.4,
         fill: true,
       },
       {
@@ -27,11 +27,11 @@ const Graph = ({ curriculum, ratings, calculatePredictedGrade, starRatingToNumer
           const userRating = ratings[subject.name];
           return userRating === null || userRating === -1
             ? calculatePredictedGrade()
-            : null; // Predicted grades only for unrated subjects
+            : null;
         }),
         borderColor: "rgba(255, 99, 132, 1)",
         backgroundColor: "rgba(255, 99, 132, 0.2)",
-        borderDash: [5, 5], // Dashed line for predicted grades
+        borderDash: [5, 5],
         borderWidth: 2,
         tension: 0.4,
         fill: true,
@@ -44,7 +44,7 @@ const Graph = ({ curriculum, ratings, calculatePredictedGrade, starRatingToNumer
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: "top", // Position of the legend
+        position: "top",
       },
     },
     scales: {
@@ -52,7 +52,7 @@ const Graph = ({ curriculum, ratings, calculatePredictedGrade, starRatingToNumer
         beginAtZero: true,
         max: 4,
         ticks: {
-          stepSize: 0.5, // Step size for clarity
+          stepSize: 0.5,
         },
         title: {
           display: true,
