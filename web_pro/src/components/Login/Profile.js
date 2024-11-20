@@ -19,6 +19,19 @@ const Profile = () => {
     "Data Analysis",
     "Software Engineer",
     "Web Development",
+    "Game Development",
+    "Mobile App Development",
+    "Artificial Intelligence (AI) and Machine Learning (ML)",
+    "Cybersecurity",
+    "Cloud Computing and DevOps",
+    "Embedded Systems and IoT",
+    "UI/UX Design",
+    "Blockchain Development",
+    "Robotics",
+    "Software Testing and QA",
+    "AR/VR Development",
+    "Big Data",
+    "DevTools and Productivity",
     "Other",
   ];
   const fields = ["AI", "Metaverse", "IoT", "Do Abroad"];
@@ -88,7 +101,6 @@ const Profile = () => {
       );
 
       if (response.ok) {
-        alert("Profile updated successfully");
         setIsEditing(false);
       } else {
         alert("Failed to update profile");
