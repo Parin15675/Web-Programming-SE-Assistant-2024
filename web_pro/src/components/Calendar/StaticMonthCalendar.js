@@ -32,11 +32,10 @@ const formatDate = (date) => {
 const StaticMonthCalendar = ({ linkTo = "/details", email }) => {
     const currentDate = resetTimeToMidnight(new Date());
     const currentMonthDays = getMonthDays(currentDate);
-    const [events, setEvents] = useState({}); // State to store events
-    const [holidays, setHolidays] = useState([]); // State to store holidays
+    const [events, setEvents] = useState({});
+    const [holidays, setHolidays] = useState([]);
 
     useEffect(() => {
-        // Fetch user events
         if (email) {
             axios
                 .get(`http://localhost:8000/get_schedules/${email}`)
@@ -48,7 +47,6 @@ const StaticMonthCalendar = ({ linkTo = "/details", email }) => {
                 });
         }
 
-        // Fetch public holidays
         axios
             .get("http://localhost:8000/api/public_holidays/")
             .then((response) => {
@@ -83,10 +81,8 @@ const StaticMonthCalendar = ({ linkTo = "/details", email }) => {
 
                 <div className="calendar-body-month">
                     {currentMonthDays.map((day, index) => {
-                        // Keep track of displayed event titles
                         const displayedEvents = new Set();
 
-                        // Check for public holidays
                         const holiday = day ? isPublicHoliday(resetTimeToMidnight(day)) : null;
 
                         return (
@@ -94,8 +90,8 @@ const StaticMonthCalendar = ({ linkTo = "/details", email }) => {
                                 key={index}
                                 className="calendar-day-month-static"
                                 style={{
-                                    backgroundColor: holiday ? "#ffe0b2" : "transparent", // Highlight full container for holidays
-                                    borderRadius: "5px", // Optional for rounded corners
+                                    backgroundColor: holiday ? "#ffe0b2" : "transparent",
+                                    borderRadius: "5px",
                                 }}
                             >
                                 {day ? (
@@ -108,13 +104,10 @@ const StaticMonthCalendar = ({ linkTo = "/details", email }) => {
                                     >
                                         {day.getDate()}
 
-
-                                        {/* Display Events */}
                                         <div className="calendar-day-events">
                                             {events[formatDate(resetTimeToMidnight(day))] &&
                                                 Object.values(events[formatDate(resetTimeToMidnight(day))])
                                                     .filter((event) => {
-                                                        // Only display unique events
                                                         if (displayedEvents.has(event.title)) {
                                                             return false;
                                                         }
