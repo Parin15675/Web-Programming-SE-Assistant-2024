@@ -14,9 +14,26 @@ class User(BaseModel):
     gmail: EmailStr
     year: int
     career: str
-    field: Optional[str] = None  # Add the field property
-    schedules: Optional[Dict[str, Dict[int, Schedule]]] = None  # Store schedules per day as minute keys
+    field: Optional[str] = None
+    schedules: Optional[Dict[str, Dict[int, Schedule]]] = None
 
 class TargetGPARequest(BaseModel):
     gmail: str
     target_gpa: float
+
+class SimplifiedUser(BaseModel): 
+    name: Optional[str] = None
+    gmail: Optional[EmailStr] = None
+    year: Optional[int] = None
+    career: Optional[str] = None
+    field: Optional[str] = None
+
+class RatingRequest(BaseModel):
+    gmail: EmailStr
+    subject: str
+    topic: str
+    rating: int
+
+class ScheduleRequest(BaseModel):
+    gmail: EmailStr
+    schedules: Dict[str, Dict[int, Schedule]]  # Dict[date, Dict[minute, Schedule details]]
