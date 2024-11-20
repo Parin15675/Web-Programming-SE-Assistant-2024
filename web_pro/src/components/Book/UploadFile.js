@@ -32,11 +32,10 @@ function UploadFile({ onUploadSuccess, year, closeModal }) {
       console.log("Upload successful:", response.data);
       setUploadSuccess(true);
 
-      // Trigger the callback to refresh the book list
       if (onUploadSuccess) {
         onUploadSuccess();
       }
-      closeModal(); // Close modal after successful upload
+      closeModal();
     } catch (error) {
       console.error("Upload failed:", error.response?.data || error.message);
       setUploadSuccess(false);
