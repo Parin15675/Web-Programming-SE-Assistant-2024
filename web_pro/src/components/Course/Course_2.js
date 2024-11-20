@@ -13,7 +13,7 @@ function Course_2() {
   });
 
   const [selectedSubject, setSelectedSubject] = useState(null);
-  const [gpaError, setGpaError] = useState(""); // State for GPA input error
+  const [gpaError, setGpaError] = useState("");
   const [targetGpa, setTargetGpa] = useState(3.5);
   const [ratings, setRatings] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -22,7 +22,7 @@ function Course_2() {
   const [career, setCareer] = useState("");
   const [field, setField] = useState("");
   const [name, setName] = useState("");
-  const [semester, setSemester] = useState(1); // Default to Semester 1
+  const [semester, setSemester] = useState(1);
   const [gradeInfo, setGradeInfo] = useState({
     status: "",
     message: "",
@@ -79,7 +79,6 @@ function Course_2() {
         )
         .then((res) => {
           if (res.data.curriculum.subjects.length === 0) {
-            // If no subjects are returned, set a placeholder
             setCurriculum({
               subjects: [{ name: "No Subjects Available", topics: [] }],
             });
@@ -139,7 +138,7 @@ function Course_2() {
     if (profile && profile.email && !isReturningUser) {
       fetchCurriculum();
     }
-  }, [semester]); // Trigger whenever the semester changes
+  }, [semester]);
 
   useEffect(() => {
     if (profile && profile.email) {
@@ -151,11 +150,10 @@ function Course_2() {
           )}`
         )
         .then((res) => {
-          setTargetGpa(res.data.target_gpa || 3.5); // Update targetGpa from backend
+          setTargetGpa(res.data.target_gpa || 3.5);
         })
         .catch((err) => {
           console.error("Error fetching target GPA:", err);
-          // Default value remains 3.5 if API fails
         });
     }
   }, [profile]);
@@ -169,7 +167,7 @@ function Course_2() {
         )}?semester=${semester}`
       )
       .then((res) => {
-        setCurriculum(res.data.curriculum || { subjects: [] }); // Credits will already be part of this
+        setCurriculum(res.data.curriculum || { subjects: [] });
         setYear(res.data.user.year);
         setCareer(res.data.user.career);
         setField(res.data.user.field);
@@ -193,14 +191,13 @@ function Course_2() {
   const calculatePredictedGrades = () => {
     const averageGrades = calculateAverageGrades();
     const currentSum = averageGrades.reduce(
-      (sum, grade) => sum + (grade > 0 ? grade : 0), // Include only valid grades
+      (sum, grade) => sum + (grade > 0 ? grade : 0),
       0
     );
 
     const ratedSubjects = averageGrades.filter((grade) => grade > 0).length;
     const remainingSubjects = curriculum.subjects.length - ratedSubjects;
 
-    // Use the user-defined targetGpa
     const requiredGPA = targetGpa;
 
     if (remainingSubjects === 0) {
@@ -213,7 +210,6 @@ function Course_2() {
       (requiredGPA * curriculum.subjects.length - currentSum) /
       remainingSubjects;
 
-    // Ensure the required grade is valid (0 to 4)
     const isFeasible =
       remainingRequiredGrade <= 4 && remainingRequiredGrade >= 0;
 
@@ -225,7 +221,6 @@ function Course_2() {
         // Use predicted grade for unrated subjects
         return remainingRequiredGrade;
       } else {
-        // If not feasible, leave as null
         return null;
       }
     });
@@ -234,7 +229,7 @@ function Course_2() {
   const calculateAverageGrades = () => {
     return curriculum.subjects.map((subject) => {
       const topicRatings = Object.values(ratings[subject.name] || {}).filter(
-        (rating) => rating > 0 // Only consider rated topics
+        (rating) => rating > 0
       );
       const total = topicRatings.reduce(
         (sum, rating) => sum + starToGrade(rating),
@@ -245,19 +240,19 @@ function Course_2() {
   };
 
   const calculateProgress = (subject) => {
-    const totalTopics = subject.topics.length || 0; // Ensure topics length is not undefined
+    const totalTopics = subject.topics.length || 0;
     if (totalTopics === 0) {
-      return 0; // No topics = 0% progress
+      return 0;
     }
     const ratedTopics = Object.values(ratings[subject.name] || {}).filter(
-      (rating) => rating > 0 // Only count positive ratings
+      (rating) => rating > 0 
     ).length;
     return Math.round((ratedTopics / totalTopics) * 100);
   };
 
   const calculateGPA = () => {
-    let totalWeightedGrade = 0; // Total grade weighted by credits
-    let totalCredits = 0; // Sum of credits of subjects included in GPA calculation
+    let totalWeightedGrade = 0;
+    let totalCredits = 0;
   
     curriculum.subjects.forEach((subject) => {
       const topicRatings = Object.values(ratings[subject.name] || {});
@@ -268,12 +263,11 @@ function Course_2() {
           topicRatings.reduce((sum, rating) => sum + starToGrade(rating), 0) /
           topicRatings.length;
   
-        totalWeightedGrade += averageGrade * subject.credit; // Weight grade by credits
-        totalCredits += subject.credit; // Add subject credits to total
+        totalWeightedGrade += averageGrade * subject.credit;
+        totalCredits += subject.credit;
       }
     });
   
-    // Calculate GPA
     const gpa = totalCredits > 0 ? (totalWeightedGrade / totalCredits).toFixed(2) : "0.00";
   
     console.log("Calculated GPA:", gpa);
@@ -284,14 +278,14 @@ function Course_2() {
   const calculateGradeInfo = (updatedTargetGpa) => {
     const averageGrades = calculateAverageGrades();
     const currentSum = averageGrades.reduce(
-      (sum, grade) => sum + (grade > 0 ? grade : 0), // Include only rated grades
+      (sum, grade) => sum + (grade > 0 ? grade : 0), 
       0
     );
   
     const ratedSubjects = averageGrades.filter((grade) => grade > 0).length;
     const remainingSubjects = curriculum.subjects.length - ratedSubjects;
   
-    const requiredGPA = updatedTargetGpa || targetGpa; // Use the updated value if passed
+    const requiredGPA = updatedTargetGpa || targetGpa;
     const currentGPA = ratedSubjects > 0 ? currentSum / ratedSubjects : 0;
   
     // Check if the user has failed any requirement subject
@@ -320,7 +314,7 @@ function Course_2() {
               gpa: currentGPA.toFixed(2),
               message: `You failed the requirement for ${subjectName}. Minimum grade required: ${requiredGrade}`,
             });
-            return; // Exit early since failure is final
+            return;
           }
         } else {
           // Requirement subject is incomplete
@@ -329,7 +323,7 @@ function Course_2() {
             gpa: currentGPA.toFixed(2),
             message: `Incomplete ratings for ${subjectName}. Complete all topics to proceed.`,
           });
-          return; // Exit early
+          return;
         }
       }
     }
@@ -340,7 +334,6 @@ function Course_2() {
       remainingSubjects;
   
     if (remainingSubjects === 0) {
-      // All subjects are rated
       if (currentGPA >= requiredGPA) {
         setGradeInfo({
           status: "pass",
@@ -376,7 +369,7 @@ function Course_2() {
   
 
   useEffect(() => {
-    calculateGradeInfo(targetGpa); // Recalculate whenever targetGpa changes
+    calculateGradeInfo(targetGpa);
   }, [targetGpa]);
 
   useEffect(() => {
@@ -386,12 +379,11 @@ function Course_2() {
   const handleGpaChange = (value) => {
     const gpa = Number(value);
     if (gpa < 0 || gpa > 4) {
-      setGpaError("Target GPA must be between 0 and 4."); // Validate input
+      setGpaError("Target GPA must be between 0 and 4.");
     } else {
-      setGpaError(""); // Clear error
+      setGpaError("");
       setTargetGpa(gpa);
 
-      // Update the target GPA in the backend
       axios
         .post("http://localhost:8000/api/user/target_gpa/", {
           gmail: profile.email,
@@ -415,14 +407,13 @@ function Course_2() {
       ...prevRatings,
       [subjectName]: Object.keys(prevRatings[subjectName] || {}).reduce(
         (acc, topicName) => {
-          acc[topicName] = -1; // Reset to -1
+          acc[topicName] = -1;
           return acc;
         },
         {}
       ),
     }));
 
-    // Send reset request to the backend
     axios
       .post("http://localhost:8000/api/user/reset-rating", {
         gmail: profile.email,
@@ -467,7 +458,7 @@ function Course_2() {
             );
             return total / topicRatings.length; // Average grade
           }
-          return null; // Return null for unrated subjects
+          return null;
         }),
         backgroundColor: "rgba(75, 192, 192, 0.5)",
         borderColor: "rgba(75, 192, 192, 1)",
@@ -480,25 +471,25 @@ function Course_2() {
     scales: {
       y: {
         beginAtZero: true,
-        max: 4, // Set max to 4
+        max: 4,
         ticks: {
-          stepSize: 0.5, // Optional: Add steps of 0.5 for clarity
+          stepSize: 0.5,
           font: {
-            size: 16, // Set the font size for y-axis ticks
+            size: 16,
           },
         },
         title: {
           display: true,
           text: "Grades",
           font: {
-            size: 16, // Set font size for axis title
+            size: 16,
           },
         },
       },
       x: {
         ticks: {
           font: {
-            size: 16, // Set the font size for x-axis ticks
+            size: 16,
           },
         },
       },
@@ -507,16 +498,16 @@ function Course_2() {
       legend: {
         labels: {
           font: {
-            size: 14, // Set the font size for the legend
+            size: 14,
           },
         },
       },
       tooltip: {
         bodyFont: {
-          size: 12, // Set the font size for tooltips
+          size: 12,
         },
         titleFont: {
-          size: 14, // Set the font size for tooltip titles
+          size: 14,
         },
       },
     },
@@ -557,13 +548,12 @@ function Course_2() {
       response.data.curriculum.subjects.forEach((subject) => {
         initialRatings[subject.name] = {};
         (subject.topics || []).forEach((topic) => {
-          initialRatings[subject.name][topic.name] = -1; // Set to -1 (not rated)
+          initialRatings[subject.name][topic.name] = -1;
         });
       });
 
       setRatings(initialRatings);
 
-      // Send the reset ratings to the backend
       await axios.post("http://localhost:8000/api/user/reset-ratings", {
         gmail: profile.email,
         ratings: initialRatings,
@@ -571,7 +561,7 @@ function Course_2() {
 
       console.log("Grades successfully reset for the new user.");
       } else {
-        window.location.reload(); // This will reload the entire webpage
+        window.location.reload();
         console.error("No curriculum data returned from the server.");
       }
     } catch (err) {
@@ -603,7 +593,7 @@ function Course_2() {
             );
             return total / topicRatings.length; // Average grade
           }
-          return null; // Leave the point empty if not fully rated
+          return null;
         }),
         borderColor: "rgba(75, 192, 192, 1)",
         backgroundColor: "rgba(75, 192, 192, 0.2)",
@@ -611,10 +601,10 @@ function Course_2() {
       },
       {
         label: "Target Grades",
-        data: calculatePredictedGrades(), // Use predicted grades
+        data: calculatePredictedGrades(),
         borderColor: "rgba(255, 99, 132, 1)",
         backgroundColor: "rgba(255, 99, 132, 0.2)",
-        borderDash: [5, 5], // Dashed line
+        borderDash: [5, 5],
         borderWidth: 2,
       },
     ],
@@ -624,25 +614,25 @@ function Course_2() {
     scales: {
       y: {
         beginAtZero: true,
-        max: 4, // Set max to 4
+        max: 4,
         ticks: {
-          stepSize: 0.5, // Optional: Add steps of 0.5 for clarity
+          stepSize: 0.5,
           font: {
-            size: 16, // Set the font size for y-axis ticks
+            size: 16,
           },
         },
         title: {
           display: true,
           text: "Grades",
           font: {
-            size: 16, // Set font size for axis title
+            size: 16,
           },
         },
       },
       x: {
         ticks: {
           font: {
-            size: 16, // Set the font size for x-axis ticks
+            size: 16,
           },
         },
       },
@@ -651,16 +641,16 @@ function Course_2() {
       legend: {
         labels: {
           font: {
-            size: 14, // Set the font size for the legend
+            size: 14,
           },
         },
       },
       tooltip: {
         bodyFont: {
-          size: 12, // Set the font size for tooltips
+          size: 12,
         },
         titleFont: {
-          size: 14, // Set the font size for tooltip titles
+          size: 14,
         },
       },
     },
@@ -798,7 +788,6 @@ function Course_2() {
                   Current GPA: {calculateGPA()}
                 </p>
                 <p className="text-lg font-semibold">Target GPA: {targetGpa}</p>{" "}
-                {/* Dynamically shows target GPA */}
                 <p className="text-lg  font-semibold">{gradeInfo.message}</p>
                 {/* Target GPA Input */}
                 <div className="mt-6 pt-20">
@@ -824,7 +813,7 @@ function Course_2() {
             <h2 className="text-3xl font-bold mt-6 pt-8 ">Subjects</h2>
             <div className="flex flex-col space-y-4 pt-10">
               {curriculum.subjects.map((subject, index) => {
-                const progressPercent = calculateProgress(subject); // Call calculateProgress for each subject
+                const progressPercent = calculateProgress(subject);
 
                 return (
                   <div
@@ -856,7 +845,7 @@ function Course_2() {
                         );
                       }
 
-                      return null; // No grade letter if not all topics are rated
+                      return null;
                     })()}
 
                     {/* Subject Name and Details */}
@@ -908,14 +897,14 @@ function Course_2() {
                                     nextValue
                                   )
                                 }
-                                starDimension="40px" // Set the desired star size
-                                starSpacing="10px" // Set the spacing between stars
+                                starDimension="40px"
+                                starSpacing="10px"
                                 renderStarIcon={(index, value) => (
                                   <span
                                     style={{
-                                      fontSize: "30px", // Force the star size with CSS
-                                      marginRight: "10px", // Force spacing with CSS
-                                      color: index <= value ? "gold" : "gray", // Optional: Change star color
+                                      fontSize: "30px",
+                                      marginRight: "10px",
+                                      color: index <= value ? "gold" : "gray",
                                     }}
                                   >
                                     ★
