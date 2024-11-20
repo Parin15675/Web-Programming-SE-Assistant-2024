@@ -37,7 +37,6 @@ const YoutubeSearch = () => {
   return (
     <div>
       <Nav />
-      {/* Hero Section with Box Cover */}
       <header
         className="relative text-center py-24 pt-40"
         style={{
