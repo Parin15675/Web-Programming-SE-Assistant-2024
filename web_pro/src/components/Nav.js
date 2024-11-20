@@ -23,10 +23,8 @@ const Nav = () => {
       const currentScrollY = window.scrollY;
 
       if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scroll down - hide navbar with fade and slide up effect
         setShowNavbar(false);
       } else {
-        // Scroll up - show navbar with fade and slide down effect
         setShowNavbar(true);
       }
 
