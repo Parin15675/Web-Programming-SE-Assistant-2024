@@ -34,15 +34,15 @@ function Course_2() {
   const gradeRequirements = {
     Metaverse: {
       "Database Systems": 2.0,
-      "Software Engineering Principles": 3.0,
+      "Software Engineering Principles": 2.0,
     },
     IoT: {
-      "Computer Networks": 2.5,
-      "Computer Architecture and Organization": 3.0,
+      "Computer Networks": 2.0,
+      "Computer Architecture and Organization": 2.0,
     },
     AI: {
-      "Introduction to Logic": 3.5,
-      "Probability Models and Data Analysis": 3.5,
+      "Introduction to Logic": 2.0,
+      "Probability Models and Data Analysis": 2.0,
     },
   };
 
@@ -244,16 +244,6 @@ function Course_2() {
     });
   };
 
-  const getFullyRatedSubjects = () => {
-    return curriculum.subjects.filter((subject) =>
-      subject.topics.every(
-        (topic) =>
-          ratings[subject.name]?.[topic.name] !== undefined &&
-          ratings[subject.name]?.[topic.name] !== -1
-      )
-    );
-  };
-
   const calculateProgress = (subject) => {
     const totalTopics = subject.topics.length || 0; // Ensure topics length is not undefined
     if (totalTopics === 0) {
@@ -266,42 +256,30 @@ function Course_2() {
   };
 
   const calculateGPA = () => {
-    let totalWeightedGrade = 0;
-    let totalCredits = 0;
-
+    let totalWeightedGrade = 0; // Total grade weighted by credits
+    let totalCredits = 0; // Sum of credits of subjects included in GPA calculation
+  
     curriculum.subjects.forEach((subject) => {
-      const topicRatings = Object.values(ratings[subject.name] || {}).filter(
-        (rating) => rating > 0 // Only consider rated topics
-      );
-
-      if (topicRatings.length > 0) {
+      const topicRatings = Object.values(ratings[subject.name] || {});
+      const allTopicsRated = topicRatings.length > 0 && topicRatings.every((rating) => rating > 0);
+  
+      if (allTopicsRated) {
         const averageGrade =
           topicRatings.reduce((sum, rating) => sum + starToGrade(rating), 0) /
           topicRatings.length;
-
-        totalWeightedGrade += averageGrade * subject.credit; // Weighted by credits
-        totalCredits += subject.credit;
+  
+        totalWeightedGrade += averageGrade * subject.credit; // Weight grade by credits
+        totalCredits += subject.credit; // Add subject credits to total
       }
     });
-
-    const gpa =
-      totalCredits > 0
-        ? (totalWeightedGrade / totalCredits).toFixed(2)
-        : "0.00";
-
+  
+    // Calculate GPA
+    const gpa = totalCredits > 0 ? (totalWeightedGrade / totalCredits).toFixed(2) : "0.00";
+  
     console.log("Calculated GPA:", gpa);
-    console.log("Ratings Structure:", ratings);
-    curriculum.subjects.forEach((subject) => {
-      const topicRatings = Object.values(ratings[subject.name] || {}).filter(
-        (rating) => rating > 0
-      );
-      console.log(`Subject: ${subject.name}`);
-      console.log(`Topic Ratings: ${topicRatings}`);
-      console.log(`Subject Credit: ${subject.credit}`);
-    });
-
     return gpa;
   };
+  
 
   const calculateGradeInfo = (updatedTargetGpa) => {
     const averageGrades = calculateAverageGrades();
@@ -309,31 +287,70 @@ function Course_2() {
       (sum, grade) => sum + (grade > 0 ? grade : 0), // Include only rated grades
       0
     );
-
+  
     const ratedSubjects = averageGrades.filter((grade) => grade > 0).length;
     const remainingSubjects = curriculum.subjects.length - ratedSubjects;
-
+  
     const requiredGPA = updatedTargetGpa || targetGpa; // Use the updated value if passed
-
     const currentGPA = ratedSubjects > 0 ? currentSum / ratedSubjects : 0;
-
+  
+    // Check if the user has failed any requirement subject
+    const requirementSubjects = Object.keys(gradeRequirements[field] || {});
+    for (const subjectName of requirementSubjects) {
+      const requiredGrade = gradeRequirements[field][subjectName];
+      const subjectIndex = curriculum.subjects.findIndex(
+        (subject) => subject.name === subjectName
+      );
+  
+      if (subjectIndex !== -1) {
+        const topicRatings = Object.values(ratings[subjectName] || {});
+        const allTopicsRated = topicRatings.length > 0 && topicRatings.every(
+          (rating) => rating !== null && rating !== undefined && rating > 0
+        );
+  
+        if (allTopicsRated) {
+          const averageGrade =
+            topicRatings.reduce((sum, rating) => sum + starToGrade(rating), 0) /
+            topicRatings.length;
+  
+          if (averageGrade < requiredGrade) {
+            // Automatically fail if requirement is not met
+            setGradeInfo({
+              status: "fail",
+              gpa: currentGPA.toFixed(2),
+              message: `You failed the requirement for ${subjectName}. Minimum grade required: ${requiredGrade}`,
+            });
+            return; // Exit early since failure is final
+          }
+        } else {
+          // Requirement subject is incomplete
+          setGradeInfo({
+            status: "fail",
+            gpa: currentGPA.toFixed(2),
+            message: `Incomplete ratings for ${subjectName}. Complete all topics to proceed.`,
+          });
+          return; // Exit early
+        }
+      }
+    }
+  
     // Calculate the required grade for remaining subjects
     const remainingRequiredGrade =
       (requiredGPA * curriculum.subjects.length - currentSum) /
       remainingSubjects;
-
+  
     if (remainingSubjects === 0) {
       // All subjects are rated
       if (currentGPA >= requiredGPA) {
         setGradeInfo({
           status: "pass",
-          gpa: currentGPA,
-          message: "You have passed the requirement!",
+          gpa: currentGPA.toFixed(2),
+          message: "You have passed all requirements!",
         });
       } else {
         setGradeInfo({
           status: "fail",
-          gpa: currentGPA,
+          gpa: currentGPA.toFixed(2),
           message: "You did not meet the GPA requirement.",
         });
       }
@@ -341,7 +358,7 @@ function Course_2() {
       // Impossible case: Remaining required grade exceeds 4
       setGradeInfo({
         status: "impossible",
-        gpa: currentGPA,
+        gpa: currentGPA.toFixed(2),
         message:
           "It is impossible to pass the requirement with the remaining subjects.",
       });
@@ -349,13 +366,14 @@ function Course_2() {
       // Progress case: Calculate required grade for remaining subjects
       setGradeInfo({
         status: "progress",
-        gpa: currentGPA,
+        gpa: currentGPA.toFixed(2),
         message: `You need an average grade of ${remainingRequiredGrade.toFixed(
           2
         )} in the remaining subjects to pass the requirement.`,
       });
     }
   };
+  
 
   useEffect(() => {
     calculateGradeInfo(targetGpa); // Recalculate whenever targetGpa changes
@@ -629,17 +647,10 @@ function Course_2() {
     },
   };
 
-  const hasMatchingSubjects = () => {
-    const requiredSubjects = Object.keys(gradeRequirements[field] || {});
-    return curriculum.subjects.some((subject) =>
-      requiredSubjects.includes(subject.name)
-    );
-  };
-
   return (
     <>
       <Nav />
-      <div className="p-6 pt-32 bg-gradient-to-br from-sky-200 via-white to-sky-100">
+      <div className="p-6 pt-32 bg-customGray">
         {!isReturningUser ? (
           <div className="max-w-md mx-auto mt-10 p-6 bg-gradient-to-br from-sky-200 via-white to-sky-100 rounded-lg shadow-md">
             <h2 className="text-xl font-bold text-center mb-6">
@@ -748,7 +759,7 @@ function Course_2() {
               </div>
 
               <div
-                className={`bg-white p-4 rounded shadow-md ${
+                className={`bg-gradient-to-r from-blue-100 via-white to-blue-50 p-4 rounded shadow-md ${
                   gradeInfo.status === "pass"
                     ? "border-green-500 text-green-700"
                     : gradeInfo.status === "fail"
@@ -761,10 +772,12 @@ function Course_2() {
                   borderWidth: "2px",
                 }}
               >
-                <h2 className="text-2xl font-bold text-center">
+                <h2 className="text-2xl font-bold text-center ">
                   Grade Information
                 </h2>
-                <p className="text-lg font-semibold">Current GPA: {calculateGPA()}</p>
+                <p className="text-lg font-semibold">
+                  Current GPA: {calculateGPA()}
+                </p>
                 <p className="text-lg font-semibold">Target GPA: {targetGpa}</p>{" "}
                 {/* Dynamically shows target GPA */}
                 <p className="text-lg  font-semibold">{gradeInfo.message}</p>
@@ -903,8 +916,11 @@ function Course_2() {
                         </div>
 
                         {/* Right Section: Videos */}
-                        <div className="flex flex-col gap-2 lg:w-1/2 text-left text-xl" style={{ marginLeft: '-20px' }}>
-                          <h4 className="text-md font-bold">Watch Lectures</h4>
+                        <div
+                          className="flex flex-col gap-2 lg:w-1/2 text-center text-xl"
+                          style={{ marginLeft: "-20px" }}
+                        >
+                          <h4 className="text-md font-bold ">Watch Lectures</h4>
 
                           <YoutubeSearch />
                         </div>

@@ -51,27 +51,27 @@ const Nav = () => {
       </div>
       <ul className="list-none flex m-0">
         <li className="mx-5 relative">
-          <NavLink exact to="/home" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4 bg-white/10 rounded-xl transition-all duration-500 ease-in-out hover:text-teal-400 hover:bg-white/20 shadow-sm">Home</NavLink>
+          <NavLink exact to="/home" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4  transition-all duration-500 ease-in-out hover:bg-white/20 shadow-sm">Home</NavLink>
         </li>
         <li className="mx-5 relative">
-          <NavLink to="/course" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4 bg-white/10 rounded-xl transition-all duration-500 ease-in-out hover:text-teal-400 hover:bg-white/20 shadow-sm">Course</NavLink>
+          <NavLink to="/course" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4  transition-all duration-500 ease-in-out hover:bg-white/20 shadow-sm">Course</NavLink>
         </li>
         <li className="mx-5 relative">
-          <NavLink to="/schedule" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4 bg-white/10 rounded-xl transition-all duration-500 ease-in-out hover:text-teal-400 hover:bg-white/20 shadow-sm">Schedule</NavLink>
+          <NavLink to="/schedule" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4  transition-all duration-500 ease-in-out hover:bg-white/20 shadow-sm">Schedule</NavLink>
         </li>
         <li className="mx-5 relative">
-          <NavLink to="/video" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4 bg-white/10 rounded-xl transition-all duration-500 ease-in-out hover:text-teal-400 hover:bg-white/20 shadow-sm">Video</NavLink>
+          <NavLink to="/video" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4  transition-all duration-500 ease-in-out hover:bg-white/20 shadow-sm">Video</NavLink>
         </li>
         <li className="mx-5 relative">
-          <NavLink to="/book" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4 bg-white/10 rounded-xl transition-all duration-500 ease-in-out hover:text-teal-400 hover:bg-white/20 shadow-sm">Book</NavLink>
+          <NavLink to="/book" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4  transition-all duration-500 ease-in-out hover:bg-white/20 shadow-sm">Book</NavLink>
         </li>
         <li className="mx-5 relative">
           {profile ? (
-            <NavLink to="/" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4 bg-white/10 rounded-xl transition-all duration-500 ease-in-out hover:text-teal-400 hover:bg-white/20 shadow-sm">
+            <NavLink to="/" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4  transition-all duration-500 ease-in-out hover:bg-white/20 shadow-sm">
               {profile.name}
             </NavLink>
           ) : (
-            <NavLink to="/login" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4 bg-white/10 rounded-xl transition-all duration-500 ease-in-out hover:text-teal-400 hover:bg-white/20 shadow-sm">
+            <NavLink to="/login" activeClassName="bg-teal-700 text-white" className="uppercase no-underline text-white py-2 px-4  transition-all duration-500 ease-in-out hover:bg-white/20 shadow-sm">
               You are not logged in
             </NavLink>
           )}

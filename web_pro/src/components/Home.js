@@ -7,7 +7,6 @@ import { useSelector } from "react-redux";
 import { Line } from "react-chartjs-2";
 import { useNavigate } from "react-router-dom";
 
-
 const Video = () => {
   const [curriculum, setCurriculum] = useState(null);
   const [ratings, setRatings] = useState({});
@@ -15,6 +14,11 @@ const Video = () => {
   const [targetGpa, setTargetGpa] = useState(3.0);
   const profile = useSelector((state) => state.profile);
   const navigate = useNavigate();
+  const [userDetails, setUserDetails] = useState({
+    year: "",
+    career: "",
+    field: "",
+  });
 
   const fetchCurriculum = (semester) => {
     if (profile && profile.email) {
@@ -28,13 +32,12 @@ const Video = () => {
           console.log("API Response:", res.data); // ดูข้อมูลที่ได้รับ
           const { curriculum: userCurriculum } = res.data;
           setCurriculum(userCurriculum);
-  
+
           const updatedRatings = {};
           userCurriculum.subjects.forEach((subject) => {
             updatedRatings[subject.name] = {};
             subject.topics.forEach((topic) => {
-              updatedRatings[subject.name][topic.name] =
-                topic.rating || -1; // Default to -1 for no rating
+              updatedRatings[subject.name][topic.name] = topic.rating || -1; // Default to -1 for no rating
             });
           });
           setRatings(updatedRatings);
@@ -45,16 +48,34 @@ const Video = () => {
     }
   };
 
-  
+  useEffect(() => {
+    if (profile && profile.email) {
+      axios
+        .get(`http://localhost:8000/api/user/${profile.email}`)
+        .then((res) => {
+          setUserDetails({
+            year: res.data.year || "Not specified",
+            career: res.data.career || "Not specified",
+            field: res.data.field || "Not specified",
+          });
+        })
+        .catch((err) => console.error("Error fetching user details:", err));
+    }
+  }, [profile]);
+
   useEffect(() => {
     if (profile && profile.email) {
       // Fetch the current targetGpa from the backend
       axios
-        .get(`http://localhost:8000/api/user/target_gpa/${encodeURIComponent(profile.email)}`)
+        .get(
+          `http://localhost:8000/api/user/target_gpa/${encodeURIComponent(
+            profile.email
+          )}`
+        )
         .then((res) => {
-          console.log(res.data.target_gpa)
+          console.log(res.data.target_gpa);
           setTargetGpa(res.data.target_gpa); // Update targetGpa from backend
-          console.log(targetGpa)
+          console.log(targetGpa);
         })
         .catch((err) => {
           console.error("Error fetching target GPA:", err);
@@ -62,7 +83,6 @@ const Video = () => {
         });
     }
   }, [profile]);
-  
 
   useEffect(() => {
     fetchCurriculum(semester); // Fetch data for the default semester on load
@@ -173,10 +193,12 @@ const Video = () => {
   };
 
   const lineGraphData = {
-    labels: curriculum ? curriculum.subjects.map((subject) => subject.name) : [],
+    labels: curriculum
+      ? curriculum.subjects.map((subject) => subject.name)
+      : [],
     datasets: [
       {
-        label: "Average Grades",
+        label: "Your Expected Grades",
         data: curriculum ? calculateAverageGrades() : [],
         borderColor: "rgba(75, 192, 192, 1)",
         backgroundColor: "rgba(75, 192, 192, 0.2)",
@@ -184,7 +206,7 @@ const Video = () => {
         tension: 0.4,
       },
       {
-        label: "Predicted Grades",
+        label: "Target Grades",
         data: curriculum ? calculatePredictedGrades() : [],
         borderColor: "rgba(255, 99, 132, 1)",
         backgroundColor: "rgba(255, 99, 132, 0.2)",
@@ -233,21 +255,6 @@ const Video = () => {
           </p>
         </div>
 
-        {/* Semester Selection */}
-        <div className="mb-6 flex justify-center">
-          <label className="text-lg font-bold text-gray-700 mr-4">
-            Select Semester:
-          </label>
-          <select
-            className="border border-gray-300 rounded-md shadow-sm p-2"
-            value={semester}
-            onChange={(e) => setSemester(Number(e.target.value))}
-          >
-            <option value={1}>Semester 1</option>
-            <option value={2}>Semester 2</option>
-          </select>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Section */}
           <div className="lg:col-span-2">
@@ -256,12 +263,12 @@ const Video = () => {
               {curriculum.subjects.map((subject, index) => (
                 <div
                   key={index}
-                  className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105 cursor-pointer"
+                  className="bg-subjectblue p-4 rounded-lg shadow-md hover:shadow-lg transition-transform transform hover:scale-105 cursor-pointer"
                   onClick={() =>
                     navigate(`/course/${encodeURIComponent(subject.name)}`)
                   }
                 >
-                  <h3 className="text-lg font-bold text-gray-700 text-center">
+                  <h3 className="text-lg font-bold text-white text-center">
                     {subject.name}
                   </h3>
                 </div>
@@ -269,23 +276,66 @@ const Video = () => {
             </div>
 
             {/* Academic Progress */}
-            <div className="bg-white p-6 rounded-lg shadow-md mt-8">
-  <h3 className="text-xl font-semibold text-gray-700 mb-4">
-    Academic Progress
-  </h3>
-  <p className="text-lg font-semibold text-gray-600 mb-4">
-    Current GPA: {calculateGPA()}
-  </p>
-  <p className="text-lg font-semibold text-gray-600 mb-4">
-    Target GPA: {targetGpa}
-  </p>
-  <Line data={lineGraphData} options={lineGraphOptions} />
-</div>
 
+            <div className="bg-white p-6 rounded-lg shadow-md mt-8">
+              {/* Header with Title and Dropdown */}
+              <div className="relative mb-6">
+                {/* Centered Title */}
+                <h3 className="text-2xl font-bold text-gray-700 text-center">
+                  Academic Progress
+                </h3>
+                {/* Dropdown in Top-Right */}
+                <div className="absolute top-0 right-0">
+                  <select
+                    className="border border-gray-300 rounded-md shadow-sm p-2"
+                    value={semester}
+                    onChange={(e) => setSemester(Number(e.target.value))}
+                  >
+                    <option value={1}>Semester 1</option>
+                    <option value={2}>Semester 2</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Current GPA and Target GPA */}
+              <p className="text-lg font-semibold text-gray-600 mb-4 text-center">
+                Current GPA: {calculateGPA()} Target GPA: {targetGpa}
+              </p>
+
+              {/* Line Graph */}
+              <Line data={lineGraphData} options={lineGraphOptions} />
+            </div>
           </div>
 
           {/* Right Section */}
           <div>
+          <div className="bg-[#a8dadc] p-6 rounded-lg shadow-md ">
+            <div className="flex items-center justify-center">
+              <img
+                src={profile.imageUrl || "/default-avatar.png"}
+                alt="Profile"
+                className="w-16 h-16 rounded-full mr-4"
+              />
+              <div>
+                <h1 className="text-4xl font-bold">
+                  {profile.name || "Student"}
+                </h1>
+                <p className="text-lg">{profile.email}</p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <p className="text-lg">
+                <strong>Year:</strong> {userDetails.year}
+              </p>
+              <p className="text-lg">
+                <strong>Career:</strong> {userDetails.career}
+              </p>
+              <p className="text-lg">
+                <strong>Field:</strong> {userDetails.field}
+              </p>
+              </div>
+            </div>
+
             {/* Calendar Notification */}
             <CalendarNotification />
 

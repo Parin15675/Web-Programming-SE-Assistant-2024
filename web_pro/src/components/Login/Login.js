@@ -56,7 +56,7 @@ const Login = () => {
   return (
     <div>
       <Nav />
-      <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-orange-400 to-red-500">
+      <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-navy-800 via-navy-600 to-navy-900">
         <div className="bg-white shadow-lg rounded-lg w-3/4 max-w-lg p-6">
           <h1 className="text-center text-2xl font-extrabold text-gray-800 mb-6">
             React Google Login
