@@ -10,7 +10,7 @@ import { useNavigate } from "react-router-dom";
 const Video = () => {
   const [curriculum, setCurriculum] = useState(null);
   const [ratings, setRatings] = useState({});
-  const [semester, setSemester] = useState(1); // Default to Semester 1
+  const [semester, setSemester] = useState(1);
   const [targetGpa, setTargetGpa] = useState(3.0);
   const profile = useSelector((state) => state.profile);
   const navigate = useNavigate();
@@ -29,7 +29,7 @@ const Video = () => {
           )}?semester=${semester}` // Fetch data for selected semester
         )
         .then((res) => {
-          console.log("API Response:", res.data); // ดูข้อมูลที่ได้รับ
+          console.log("API Response:", res.data);
           const { curriculum: userCurriculum } = res.data;
           setCurriculum(userCurriculum);
 
@@ -37,7 +37,7 @@ const Video = () => {
           userCurriculum.subjects.forEach((subject) => {
             updatedRatings[subject.name] = {};
             subject.topics.forEach((topic) => {
-              updatedRatings[subject.name][topic.name] = topic.rating || -1; // Default to -1 for no rating
+              updatedRatings[subject.name][topic.name] = topic.rating || -1;
             });
           });
           setRatings(updatedRatings);
@@ -74,18 +74,19 @@ const Video = () => {
         )
         .then((res) => {
           console.log(res.data.target_gpa);
-          setTargetGpa(res.data.target_gpa); // Update targetGpa from backend
+          setTargetGpa(res.data.target_gpa);
           console.log(targetGpa);
         })
         .catch((err) => {
           console.error("Error fetching target GPA:", err);
-          // Default value remains 3.5 if API fails
         });
     }
   }, [profile]);
 
+
+   // Fetch data for the default semester on load
   useEffect(() => {
-    fetchCurriculum(semester); // Fetch data for the default semester on load
+    fetchCurriculum(semester);
   }, [profile, semester]);
 
   const starToGrade = (stars) => {
@@ -103,7 +104,7 @@ const Video = () => {
   const calculateAverageGrades = () => {
     return curriculum.subjects.map((subject) => {
       const topicRatings = Object.values(ratings[subject.name] || {}).filter(
-        (rating) => rating > 0 // Only consider rated topics
+        (rating) => rating > 0
       );
       const total = topicRatings.reduce(
         (sum, rating) => sum + starToGrade(rating),
@@ -116,27 +117,23 @@ const Video = () => {
   const calculatePredictedGrades = () => {
     const averageGrades = calculateAverageGrades();
     const currentSum = averageGrades.reduce(
-      (sum, grade) => sum + (grade > 0 ? grade : 0), // Include only valid grades
+      (sum, grade) => sum + (grade > 0 ? grade : 0),
       0
     );
 
     const ratedSubjects = averageGrades.filter((grade) => grade > 0).length;
     const remainingSubjects = curriculum.subjects.length - ratedSubjects;
 
-    // Use the user-defined targetGpa
     const requiredGPA = targetGpa;
 
     if (remainingSubjects === 0) {
-      // If all subjects are rated, return actual grades
       return averageGrades;
     }
 
-    // Calculate the average grade required for unrated subjects
     const remainingRequiredGrade =
       (requiredGPA * curriculum.subjects.length - currentSum) /
       remainingSubjects;
 
-    // Ensure the required grade is valid (0 to 4)
     const isFeasible =
       remainingRequiredGrade <= 4 && remainingRequiredGrade >= 0;
 
@@ -148,7 +145,6 @@ const Video = () => {
         // Use predicted grade for unrated subjects
         return remainingRequiredGrade;
       } else {
-        // If not feasible, leave as null
         return null;
       }
     });
@@ -160,7 +156,7 @@ const Video = () => {
 
     curriculum.subjects.forEach((subject) => {
       const topicRatings = Object.values(ratings[subject.name] || {}).filter(
-        (rating) => rating > 0 // Only consider rated topics
+        (rating) => rating > 0
       );
 
       if (topicRatings.length > 0) {
@@ -168,7 +164,7 @@ const Video = () => {
           topicRatings.reduce((sum, rating) => sum + starToGrade(rating), 0) /
           topicRatings.length;
 
-        totalWeightedGrade += averageGrade * subject.credit; // Weighted by credits
+        totalWeightedGrade += averageGrade * subject.credit; 
         totalCredits += subject.credit;
       }
     });
