@@ -1,10 +1,8 @@
-/* General styles for the news section */
 .news-section {
     background-color: #f9f9f9;
     padding: 20px;
 }
 
-/* Hero section styles */
 .news-hero {
     color: white;
     background-color:coral;
@@ -22,7 +20,6 @@
     font-size: 1.2rem;
 }
 
-/* Loading spinner */
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -38,7 +35,6 @@
     margin: 20px auto;
 }
 
-/* News card container */
 .news-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -46,20 +42,18 @@
     padding: 20px;
 }
 
-/* Ensure the entire card is clickable */
 .news-article-link {
-    text-decoration: none; /* Removes underline from the link */
-    color: inherit; /* Inherit the parent color to keep text styles the same */
-    display: block; /* Makes the entire link area clickable */
+    text-decoration: none;
+    color: inherit;
+    display: block;
     transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .news-article-link:hover .news-article {
     transform: translateY(-10px);
-    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1); /* Add a hover effect to the card */
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* The same news-article styles as before */
 .news-article {
     background-color: white;
     border-radius: 8px;
@@ -90,7 +84,6 @@
     color: inherit; 
 }
 
-/* Prevent default underline on hover */
 .news-article-link:hover {
     text-decoration: none;
 }
