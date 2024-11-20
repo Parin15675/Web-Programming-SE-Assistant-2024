@@ -1,6 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
-/* Base calendar styling */
 .calendar {
     display: grid;
     grid-template-rows: auto auto 1fr;
@@ -19,7 +18,6 @@
 }
 
 
-/* Calendar controls (navigation buttons and view toggle buttons) */
 .calendar-controls {
     display: flex;
     align-items: center;
@@ -39,7 +37,7 @@
 }
 
 .view-buttons button {
-    background-color: #003366; /* Darker blue */
+    background-color: #003366;
     color: #fff;
     border: none;
     width: 70%;
@@ -52,7 +50,7 @@
 }
 
 .view-buttons button:hover {
-    background-color: #003d80; /* Slightly lighter on hover */
+    background-color: #003d80;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     transform: scale(1.05);
 }
@@ -71,11 +69,10 @@
     transform: scale(1.1);
 }
 
-/* Calendar header (days of the week) */
 .calendar-header {
     display: grid;
     grid-template-columns: 60px repeat(7, 1fr);
-    background-color: #003366; /* Darker blue */
+    background-color: #003366;
     color: white;
     text-align: center;
     font-weight: bold;
@@ -88,7 +85,7 @@
 .calendar-header-month {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    background-color: #003366; /* Darker blue */
+    background-color: #003366;
     color: white;
     text-align: center;
     font-weight: bold;
@@ -116,24 +113,23 @@
 }
 
 .calendar-header .empty-column {
-    background-color: transparent; /* This empty column matches with the hour labels */
+    background-color: transparent;
     width: 60px;
 }
 
-/* Scrollable calendar body */
+
 .calendar-body-container {
-    height: 300px; /* Set a fixed height */
-    overflow-y: auto; /* Ensure the container is scrollable */
+    height: 300px;
+    overflow-y: auto;
 }
 
-/* General calendar body */
 .calendar-body {
     border-top: 1px solid #ddd;
 }
 
 .calendar-body-month {
     display: grid;
-    grid-template-columns: repeat(7, 1fr); /* 7 equal columns for each day of the week */
+    grid-template-columns: repeat(7, 1fr);
     grid-gap: 5px;
     box-sizing: border-box;
 }
@@ -141,30 +137,30 @@
 .calendar-day-month {
     background-color: white;
     border: 1px solid #ccc;
-    min-height: 100px; /* Adjust to fit more events */
-    max-height: 120px; /* Ensure the height is not too large */
+    min-height: 100px;
+    max-height: 120px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
     padding: 5px;
     box-sizing: border-box;
-    overflow: hidden; /* Prevent overflow */
+    overflow: hidden;
 }
 
 
 .calendar-day-month-static {
     background-color: white;
     border: 1px solid #ccc;
-    min-height: 20px; /* Adjust to fit more events */
-    max-height: 40px; /* Ensure the height is not too large */
+    min-height: 20px;
+    max-height: 40px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
     padding: 5px;
     box-sizing: border-box;
-    overflow: hidden; /* Prevent overflow */
+    overflow: hidden;
 }
 
 .calendar-day-month-static .calendar-day-number{
@@ -193,7 +189,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    overflow-y: hidden; /* Prevent events from making the day block larger */
+    overflow-y: hidden; 
 }
 
 .calendar-day-event {
@@ -208,17 +204,16 @@
     text-overflow: ellipsis;
 }
 
-/* Hour and half-hour slots for week view */
 .calendar-hour-row {
     display: grid; 
-    grid-template-columns: 60px repeat(7, 1fr); /* Fixed width for hour label and equal columns for days */
+    grid-template-columns: 60px repeat(7, 1fr);
     border-bottom: 1px solid #ddd;
 }
 
 
 
 .calendar-hour-label {
-    width: 60px; /* Ensure the label matches the header space */
+    width: 60px;
     text-align: right;
     padding-right: 10px;
     background-color: #f0f0f0;
@@ -230,12 +225,12 @@
     text-align: right;
     padding-right: 10px;
     background-color: #f0f0f0;
-    line-height: 2; /* Adjust line height */
+    line-height: 2;
     color: black;
 }
 
 .calendar-hour-row.day-view-row {
-    display: flex; /* Use flex for the hour row */
+    display: flex;
     border-bottom: 1px solid #ddd;
     width: 100%;
     height: 60px;
@@ -246,10 +241,9 @@
 }
 
 .calendar-day-column:last-child {
-    border-right: none; /* Remove the border for the last column */
+    border-right: none;
 }
 
-/* Slot styles for week view */
 .calendar-minute-slot {
     text-align: center;
     cursor: pointer;
@@ -265,48 +259,46 @@
 }
 
 .calendar-minute-slot:last-child {
-    border-right: none; /* Remove the right border on the last slot */
+    border-right: none;
 }
 
-/* Hover effect for minute slots */
 .calendar-minute-slot:hover {
-    background-color: rgba(0, 85, 179, 0.2); /* Light blue highlight */
+    background-color: rgba(0, 85, 179, 0.2);
 }
 
-/* Day view specific styles */
+
 .calendar-body.day-view {
     display: flex;
     flex-direction: column;
 }
 
 .calendar-minute-slots.day-view-slots {
-    flex: 1; /* Take remaining space for minute slots */
-    display: grid; /* Use grid for minute slots */
+    flex: 1;
+    display: grid; 
     grid-template-rows: repeat(60, 1fr);
     height: 100%;
     cursor: pointer;
 }
 
 .calendar-minute-slot.day-view-slot:hover {
-    background-color: rgba(0, 123, 255, 0.1); /* Hover effect */
+    background-color: rgba(0, 123, 255, 0.1);
 }
 
-/* Event text styling */
+
 .event-title {
-    position: absolute; /* Position title absolutely within the slot */
-    top: 50%; /* Center vertically */
-    left: 5px; /* Adjust as needed */
-    right: 5px; /* Keep some padding on the right side to avoid overflow */
-    color:  white; /* Ensure text color is visible */
-    font-weight: bold; /* Optional: make the text bold */
-    font-size: 0.9vw; /* Adjust font size as needed */
-    white-space: nowrap; /* Prevent text from wrapping */
-    overflow: hidden; /* Hide the overflow */
-    text-overflow: ellipsis; /* Show ellipsis when text is too long */
-    z-index: 1; /* Ensure title is on top of the background */
+    position: absolute;
+    top: 50%;
+    left: 5px;
+    right: 5px;
+    color:  white;
+    font-weight: bold;
+    font-size: 0.9vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    z-index: 1;
 }
 
-/* Modal overlay */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -314,14 +306,13 @@
     right: 0;
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(6px); /* Blur background */
+    backdrop-filter: blur(6px);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
 }
 
-/* Modal content */
 .modal-content {
     display: flex;
     flex-direction: column;
@@ -381,7 +372,6 @@
     border: 1px solid #ddd;
 }
 
-/* Color preset buttons */
 .color-preset-container {
     display: flex;
     gap: 10px;
@@ -413,7 +403,7 @@ textarea {
 }
 
 .modal-actions-container button {
-    background-color: #003366; /* Darker blue */
+    background-color: #003366;
     color: #fff;
     border: none;
     padding: 8px 12px;
@@ -424,7 +414,7 @@ textarea {
 }
 
 .modal-actions-container button:hover {
-    background-color: #002244; /* Even darker blue for hover */
+    background-color: #002244;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     transform: scale(1.05);
 }
@@ -448,7 +438,7 @@ textarea {
     right: 0;
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px); /* Blur background */
+    backdrop-filter: blur(5px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -463,10 +453,10 @@ textarea {
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     z-index: 1001;
-    max-width: 1000px !important; /* Force smaller width */
-    width: 100% !important; /* Ensure it uses 100% of its container's width */
+    max-width: 1000px !important;
+    width: 100% !important;
     height: 70%;
-    box-sizing: border-box; /* Ensure padding doesn't affect the width */
+    box-sizing: border-box;
     font-family: 'Roboto', sans-serif;
 }
 
@@ -520,8 +510,8 @@ textarea {
 }
 
 .main-calendar .calendar-body-container {
-    height: 500px; /* Set a fixed height */
-    overflow-y: auto; /* Ensure the container is scrollable */
+    height: 500px;
+    overflow-y: auto;
 }
 
 .month-event-title{
@@ -533,7 +523,6 @@ textarea {
 }
 
 
-/* Make the calendar responsive */
 @media (max-width: 768px) {
     .calendar-controls {
         flex-direction: column;
@@ -553,7 +542,7 @@ textarea {
     }
 }
 
-/* Ensure consistent box sizing */
+
 * {
     box-sizing: border-box;
 }
