@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import UploadFile from "./UploadFile";
 import Nav from "../Nav";
-import * as pdfjs from "pdfjs-dist/webpack"; // Correct import
+import * as pdfjs from "pdfjs-dist/webpack";
 
 function Book() {
   const [booksByYear, setBooksByYear] = useState({
@@ -13,9 +13,8 @@ function Book() {
   });
   const [selectedBook, setSelectedBook] = useState(null);
   const [thumbnails, setThumbnails] = useState({});
-  const [uploadYear, setUploadYear] = useState(null); // State to track which year to show upload form
-  const [showModal, setShowModal] = useState(false); // State to control modal visibility
-  const [yearClicked, setYearClicked] = useState(null);
+  const [uploadYear, setUploadYear] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   const fetchBooks = async () => {
     try {
@@ -38,19 +37,19 @@ function Book() {
   const loadPdfThumbnail = async (url) => {
     try {
       const pdf = await pdfjs.getDocument(url).promise;
-      const page = await pdf.getPage(1); // Get the first page
+
+      const page = await pdf.getPage(1);
       const canvas = document.createElement("canvas");
       const context = canvas.getContext("2d");
 
-      // Set up the canvas size to match the PDF page's size
-      const viewport = page.getViewport({ scale: 0.2 }); // Scale to make it a thumbnail
+      const viewport = page.getViewport({ scale: 0.2 });
       canvas.width = viewport.width;
       canvas.height = viewport.height;
 
       // Render the first page of the PDF into the canvas
       await page.render({ canvasContext: context, viewport: viewport }).promise;
 
-      return canvas.toDataURL(); // Return the base64 encoded image
+      return canvas.toDataURL();
     } catch (error) {
       console.error("Error loading PDF thumbnail:", error);
       return null;
@@ -75,11 +74,13 @@ function Book() {
     fetchBooks();
   }, []);
 
+  //Update thumbnails whenever booksByYear is changed/added
   useEffect(() => {
     if (Object.keys(booksByYear).length > 0) {
       generateThumbnails();
     }
   }, [booksByYear]);
+
 
   const handleBookClick = (bookId, year) => {
     setSelectedBook({ id: bookId, year });
@@ -90,12 +91,12 @@ function Book() {
   };
 
   const handleUploadButtonClick = (year) => {
-    setUploadYear(year); // Set the year for upload
-    setShowModal(true); // Show the modal
+    setUploadYear(year);
+    setShowModal(true);
   };
 
   const closeModal = () => {
-    setShowModal(false); // Close the modal
+    setShowModal(false);
   };
 
   return (
@@ -106,11 +107,9 @@ function Book() {
           <h1 className="text-4xl font-extrabold text-white">Book Hub</h1>
         </div>
 
-        {/* Viewer Section */}
         {selectedBook && (
           <div className="mt-10 px-6 mb-8">
             {" "}
-            {/* Added mb-8 for bottom margin */}
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-gray-800">
                 Viewing{" "}
@@ -138,7 +137,6 @@ function Book() {
         )}
 
         <div className="grid grid-cols-1 gap-8 px-6">
-          {/* Right Column: Book Hub */}
           <div className="w-full">
             <div className="space-y-8">
               {["year1", "year2", "year3", "year4"].map((yearKey, index) => (
@@ -157,7 +155,6 @@ function Book() {
                     </button>
                   </div>
 
-                  {/* Flex layout to wrap books into new rows */}
                   <div className="flex flex-wrap gap-8">
                     {booksByYear[yearKey].map((book) => (
                       <div
@@ -195,7 +192,6 @@ function Book() {
           </div>
         </div>
 
-        {/* Modal for Upload */}
         {showModal && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
