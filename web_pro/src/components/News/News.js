@@ -1,30 +1,29 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useSelector } from "react-redux"; // Assuming you're using Redux for user profile
+import { useSelector } from "react-redux";
 
 const News = () => {
-  const [news, setNews] = useState([]); // State to store news articles
-  const [isLoading, setIsLoading] = useState(true); // To handle loading state
-  const [career, setCareer] = useState("Software Engineering"); // Default to Software Engineering
-  const profile = useSelector((state) => state.profile); // Get the profile from Redux (e.g., contains user email)
+  const [news, setNews] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [career, setCareer] = useState("Software Engineering");
+  const profile = useSelector((state) => state.profile);
 
   // Fetch user's career interest from backend based on email
   useEffect(() => {
     if (profile && profile.email) {
-      // Fetch the user's career interest from the backend
       axios
         .get(`http://localhost:8000/api/user/schedules/${profile.email}`)
         .then((response) => {
           const userCareer =
-            response.data.user.career || "Software Engineering"; // Default if no career
-          setCareer(userCareer); // Set career based on the user data
+            response.data.user.career || "Software Engineering";
+          setCareer(userCareer);
         })
         .catch((error) => {
           console.error("Error fetching user data:", error);
-          setCareer("Software Engineering"); // Default if an error occurs
+          setCareer("Software Engineering");
         });
     } else {
-      setCareer("Software Engineering"); // Default if no profile
+      setCareer("Software Engineering");
     }
   }, [profile]);
 
@@ -35,16 +34,15 @@ const News = () => {
         .get(`http://localhost:8000/news?query=${encodeURIComponent(career)}`)
         .then((response) => {
           setNews(response.data);
-          setIsLoading(false); // Stop loading once news are fetched
+          setIsLoading(false);
         })
         .catch((error) => {
           console.error("Error fetching news articles:", error);
-          setIsLoading(false); // Stop loading even on error
+          setIsLoading(false);
         });
     }
   }, [career]);
 
-  // Scroll to news section
   const scrollToNews = () => {
     const newsSection = document.getElementById("news-section");
     newsSection.scrollIntoView({ behavior: "smooth" });
@@ -52,7 +50,6 @@ const News = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen">
-      {/* Hero Section */}
       <header
         className="relative text-white text-center py-20"
         style={{
