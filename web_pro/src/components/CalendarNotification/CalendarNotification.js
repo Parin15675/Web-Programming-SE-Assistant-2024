@@ -92,12 +92,12 @@ const CalendarNotification = () => {
                             ))}
                         </ul>
                     ) : (
-                        <h1>No events for today.</h1>
+                        <h1>No events for today</h1>
                     )}
                 </div>
             ) : (
                 <div>
-                    <h1>No events for today.</h1>
+                    <h1>No events for today</h1>
                 </div>
             )}
         </div>

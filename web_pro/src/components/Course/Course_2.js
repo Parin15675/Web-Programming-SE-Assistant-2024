@@ -551,6 +551,25 @@ function Course_2() {
         setCareer(response.data.user.career);
         setField(response.data.user.field);
         setName(response.data.user.name);
+
+        // Automatically reset grades for all subjects and topics
+      const initialRatings = {};
+      response.data.curriculum.subjects.forEach((subject) => {
+        initialRatings[subject.name] = {};
+        (subject.topics || []).forEach((topic) => {
+          initialRatings[subject.name][topic.name] = -1; // Set to -1 (not rated)
+        });
+      });
+
+      setRatings(initialRatings);
+
+      // Send the reset ratings to the backend
+      await axios.post("http://localhost:8000/api/user/reset-ratings", {
+        gmail: profile.email,
+        ratings: initialRatings,
+      });
+
+      console.log("Grades successfully reset for the new user.");
       } else {
         window.location.reload(); // This will reload the entire webpage
         console.error("No curriculum data returned from the server.");
@@ -650,7 +669,7 @@ function Course_2() {
   return (
     <>
       <Nav />
-      <div className="p-6 pt-32 bg-customGray">
+      <div className="p-6 pt-32 bg-customGray min-h-screen">
         {!isReturningUser ? (
           <div className="max-w-md mx-auto mt-10 p-6 bg-gradient-to-br from-sky-200 via-white to-sky-100 rounded-lg shadow-md">
             <h2 className="text-xl font-bold text-center mb-6">
@@ -743,7 +762,7 @@ function Course_2() {
                 </div>
 
                 {/* Semester Selector */}
-                <div className="mt-6">
+                <div className="mt-6 pt-2">
                   <label className="block text-lg font-bold text-gray-700">
                     Select Semester:
                   </label>
@@ -759,7 +778,7 @@ function Course_2() {
               </div>
 
               <div
-                className={`bg-gradient-to-r from-blue-100 via-white to-blue-50 p-4 rounded shadow-md ${
+                className={` space-y-2 bg-gradient-to-r from-blue-100 via-white to-blue-50 p-4 rounded shadow-md ${
                   gradeInfo.status === "pass"
                     ? "border-green-500 text-green-700"
                     : gradeInfo.status === "fail"
@@ -772,7 +791,7 @@ function Course_2() {
                   borderWidth: "2px",
                 }}
               >
-                <h2 className="text-2xl font-bold text-center ">
+                <h2 className="text-2xl font-bold text-center border-b border-blue-200 pb-2 ">
                   Grade Information
                 </h2>
                 <p className="text-lg font-semibold">
@@ -782,7 +801,7 @@ function Course_2() {
                 {/* Dynamically shows target GPA */}
                 <p className="text-lg  font-semibold">{gradeInfo.message}</p>
                 {/* Target GPA Input */}
-                <div className="mt-6">
+                <div className="mt-6 pt-20">
                   <label className="block text-lg font-bold text-gray-700">
                     Enter Your Target GPA:
                   </label>
@@ -802,8 +821,8 @@ function Course_2() {
               </div>
             </div>
 
-            <h2 className="text-3xl font-bold mt-6 pt-8">Subjects</h2>
-            <div className="flex flex-col space-y-4 pt-5">
+            <h2 className="text-3xl font-bold mt-6 pt-8 ">Subjects</h2>
+            <div className="flex flex-col space-y-4 pt-10">
               {curriculum.subjects.map((subject, index) => {
                 const progressPercent = calculateProgress(subject); // Call calculateProgress for each subject
 
@@ -831,7 +850,7 @@ function Course_2() {
                         const averageGrade = total / topicRatings.length;
 
                         return (
-                          <div className="absolute top-2 right-2 bg-blue-100 text-blue-800 font-bold text-lg rounded-full px-3 py-1 shadow">
+                          <div className="absolute top-2 right-2 bg-blue-100 text-blue-800 font-bold text-2xl rounded-full px-3 py-1 shadow">
                             {gradeToLetter(averageGrade)}
                           </div>
                         );
@@ -948,7 +967,7 @@ function Course_2() {
                   filteredSubjects.length === 0 ? "col-span-2" : ""
                 }`}
               >
-                <h2 className="text-xl font-bold mb-4">Overall Progress</h2>
+                <h2 className="text-3xl font-bold mb-4 text-center">Overall Progress</h2>
                 <Line data={lineGraphData} options={lineGraphOptions} />
               </div>
             </div>

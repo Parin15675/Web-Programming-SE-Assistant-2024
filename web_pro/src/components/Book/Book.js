@@ -99,7 +99,7 @@ function Book() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-sky-200 via-white to-sky-100">
+    <div className="flex justify-center items-center min-h-screen bg-customGray">
       <Nav />
       <div className="container mx-auto py-20 pt-32">
         <div className="bg-coursebg p-6 rounded-lg text-center text-white mb-8">

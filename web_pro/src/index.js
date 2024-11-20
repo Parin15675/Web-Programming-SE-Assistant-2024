@@ -7,7 +7,6 @@ import store from './components/store'; // Import the store
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import Home from './components/Home';
 import Schedule from './components/Schedule';
-import Video from './components/Video';
 import Book from './components/Book/Book';
 import Course_2 from './components/Course/Course_2';
 import Login from './components/Login/Login';

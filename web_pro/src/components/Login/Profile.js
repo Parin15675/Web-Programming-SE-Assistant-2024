@@ -128,7 +128,7 @@ const Profile = () => {
                 {isEditing ? (
                   <>
                     <div>
-                      <label className="block text-gray-700 font-semibold mb-2">
+                      <label className="block text-white font-semibold mb-2">
                         Year
                       </label>
                       <select
@@ -150,7 +150,7 @@ const Profile = () => {
                     </div>
 
                     <div>
-                      <label className="block text-gray-700 font-semibold mb-2">
+                      <label className="block text-white font-semibold mb-2">
                         Career
                       </label>
                       <select
@@ -172,7 +172,7 @@ const Profile = () => {
                     </div>
 
                     <div>
-                      <label className="block text-gray-700 font-semibold mb-2">
+                      <label className="block text-white font-semibold mb-2">
                         Field
                       </label>
                       <select
