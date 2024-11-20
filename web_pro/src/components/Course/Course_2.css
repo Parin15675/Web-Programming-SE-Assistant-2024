@@ -1,6 +1,6 @@
 .subject-container {
   display: flex;
-  flex-direction: column;  /* Arrange items in a vertical column */
+  flex-direction: column;
   gap: 16px;
   justify-content: flex-start;
   margin-top: 20px;
@@ -13,7 +13,7 @@
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 16px;
-  width: 500px;  /* Fixed width for subject box */
+  width: 500px;
   text-align: center;
   transition: transform 0.2s, box-shadow 0.2s;
 }
@@ -23,15 +23,14 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Popup styling */
 .popup {
   background-color: white;
   padding: 20px;
   border: 1px solid #ccc;
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-  margin-top: 10px;  /* Adds space between the subject box and popup */
-  max-width: 500px;  /* Restrict popup width */
+  margin-top: 10px;
+  max-width: 500px;
 }
 
 .popup-content {
@@ -45,47 +44,43 @@
   color: black;
 }
 
-/* Content container for layout */
 .content-container {
   display: flex;
-  justify-content: space-between;  /* Space between subject list and chart */
-  align-items: flex-start;  /* Align items to the top */
-  width: 100%;  /* Full container width */
-  gap: 20px;  /* Space between the subject list and chart */
+  justify-content: space-between; 
+  align-items: flex-start; 
+  width: 100%; 
+  gap: 20px;
 }
 
-/* Subject list styling */
 .subject-list {
-  flex: 1;  /* Take up 50% of the container */
-  margin-right: 20px;  /* Space between subject list and chart */
+  flex: 1; 
+  margin-right: 20px; 
 }
 
-/* Chart container styling */
 .chart-container {
-  flex: 1;  /* Take up 50% of the container */
-  max-width: 600px;  /* Set a max width for the chart to prevent overflow */
+  flex: 1;
+  max-width: 600px; 
   height: auto;
 }
 
-/* Responsive styling */
 @media (max-width: 768px) {
   .content-container {
-    flex-direction: column;  /* Stack subject list and chart on small screens */
+    flex-direction: column; 
     align-items: center;
   }
   
   .subject-list,
   .chart-container {
-    width: 100%;  /* Full width for smaller screens */
-    margin: 0;    /* Remove margin */
+    width: 100%;  
+    margin: 0;  
   }
 
   .subject-box {
-    width: 100%;  /* Make subject box responsive */
+    width: 100%; 
   }
 
   .popup {
-    width: 90%;  /* Adjust popup width for small screens */
+    width: 90%; 
   }
 
 }
