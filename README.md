@@ -79,20 +79,42 @@ The **Dashboard for SE KMITL Students** is a web application designed to enhance
 ## Screen Captures
 
 - **Home Page**  
-![Home Page]
+![home1](https://github.com/user-attachments/assets/2ef0cd75-f5da-412a-8ef5-5e2557b286d4)
+![home2](https://github.com/user-attachments/assets/4bb05cbc-5a8d-42a0-8425-fe931e38a8a5)
+___
 
-- **Course Page**  
-![Course Page]
+- **Course Page**
+![course1](https://github.com/user-attachments/assets/efd80f44-adad-4fe7-bdd2-38ea20e09cde)
+![course2](https://github.com/user-attachments/assets/180704b1-db5b-4d3e-b39a-f6ed051cf8d0)
+![course3](https://github.com/user-attachments/assets/eaf4bb88-fe1a-4837-ba3e-87978dc4cf35)
+___
 
-- **Schedule Page**  
-![Schedule Page]
+
+
+- **Schedule Page**
+![schedule1](https://github.com/user-attachments/assets/626446fa-ce4d-41d7-9b83-f88ecf2f86e6)
+![schedule2](https://github.com/user-attachments/assets/b2df6acb-0e7d-416c-8a2b-cce5d68f4da3)
+![schedule3](https://github.com/user-attachments/assets/80354cde-275f-4936-9abe-fc9bd8e8c70c)
+___
+
 
 - **Video Page**  
-![Video Page]
+![video](https://github.com/user-attachments/assets/ac98c4aa-e61a-45c4-9a68-2fff9017f169)
+![video2](https://github.com/user-attachments/assets/da0f4b20-6567-41b1-871c-f302422cd1ae)
+![video3](https://github.com/user-attachments/assets/de9b08c0-4b80-4b0b-a135-eb4860adb9f0)
+___
+- **Book Page** 
+![book](https://github.com/user-attachments/assets/0346d12b-f92d-43e8-a73f-3331678514dc)
+___
 
-- **Book Page**  
-![Book Page]
+- **Profile Page**
+![login1](https://github.com/user-attachments/assets/51d0a7df-fcda-4d39-ae66-dcb871c5e7ec)
+![login2](https://github.com/user-attachments/assets/940c6d35-dd40-48d7-9b74-6279e11286b0)
+![login3](https://github.com/user-attachments/assets/070b6d2c-2eea-413b-8be9-d9f961296fc0)
+![login4](https://github.com/user-attachments/assets/d95b5643-3bf6-4bf1-aefd-e10241763615)
+___
+- **Database**
+![database](https://github.com/user-attachments/assets/c3e689eb-958b-4867-96f5-edbd9b198557)
 
-- **Profile Page**  
-![Profile Page]
+___
 
